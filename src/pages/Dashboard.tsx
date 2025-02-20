@@ -3,14 +3,30 @@ import { Separator } from "@/components/ui/separator";
 import { FaCalendar } from "react-icons/fa";
 import { PiUsersFill } from "react-icons/pi";
 import { ModeToggle } from "@/components/mode-toggle";
-
+import { Button } from "@/components/ui/button";
 import { IoIosSchool } from "react-icons/io";
 import { AiFillSchedule } from "react-icons/ai";
+import { LuBellRing } from "react-icons/lu";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 const Dashboard = () => {
+  const [openNotification, setOpenNotification] = useState(false);
   const location = useLocation();
   console.log(location.pathname);
   const navigate = useNavigate();
+
+  const handleDialogClose = () => {
+    setOpenNotification(false);
+  };
   return (
     <div className="w-full font-[Poppins] h-screen grid gap-3 p-3 grid-cols-[200px_1fr] dark:bg-[#121212]">
       <div className="w-full h-full bg-slate-50 rounded-lg dark:bg-[#1E1E1E] px-2 py-4 flex flex-col gap-4">
@@ -107,10 +123,51 @@ const Dashboard = () => {
                 <h1 className="ml-3 mt-3">Schedules</h1>
               )}
             </div>
-            <div className="">
+            <div className="flex items-center gap-2">
               <ModeToggle />
+
+              <div className="relative">
+                <Badge
+                  className="absolute -top-3 -right-2 rounded-full "
+                  variant="destructive"
+                >
+                  2
+                </Badge>
+                <Button
+                  onClick={() => setOpenNotification(true)}
+                  className="cursor-pointer "
+                  variant="outline"
+                  size="icon"
+                >
+                  <LuBellRing />
+                </Button>
+              </div>
             </div>
           </div>
+
+          {/* Add Schedule Dialog */}
+          <Dialog open={openNotification} onOpenChange={setOpenNotification}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Notifications</DialogTitle>
+              </DialogHeader>
+
+              <div className="flex flex-col gap-3 ">
+                <div className="dark:bg-[#303030] rounded w-full h-[80px]"></div>
+                <div className="dark:bg-[#303030] rounded w-full h-[80px]"></div>
+              </div>
+
+              <DialogFooter>
+                <Button
+                  className="cursor-pointer"
+                  variant="ghost"
+                  onClick={handleDialogClose}
+                >
+                  Cancel
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <div>
             <Outlet />
