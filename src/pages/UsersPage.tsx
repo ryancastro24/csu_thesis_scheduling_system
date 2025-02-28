@@ -12,6 +12,15 @@ import { BsThreeDotsVertical } from "react-icons/bs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectLabel,
+  SelectGroup,
+} from "@/components/ui/select";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -19,6 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Pagination,
   PaginationContent,
@@ -32,8 +42,18 @@ import {
   DialogContent,
   DialogFooter,
   DialogHeader,
+  DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { invoices as sampleInvoices } from "@/lib/sampleData";
 
 const ITEMS_PER_PAGE = 10;
@@ -43,6 +63,8 @@ export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [updateModal, setUpdateModal] = useState(false);
   const [newInvoice, setNewInvoice] = useState({
     invoice: "",
     paymentStatus: "",
@@ -157,10 +179,17 @@ export default function UsersPage() {
                       <BsThreeDotsVertical />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
-                      <DropdownMenuLabel>User Account</DropdownMenuLabel>
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>Delete</DropdownMenuItem>
-                      <DropdownMenuItem>Update</DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-red-500"
+                        onClick={() => setDeleteModal(true)}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setUpdateModal(true)}>
+                        Update
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -209,49 +238,299 @@ export default function UsersPage() {
         </Pagination>
       )}
 
-      {/* Add Invoice Dialog */}
+      {/* Add user Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add New Invoice</DialogTitle>
+            <DialogTitle>Add New User</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Input
-              placeholder="Invoice ID"
-              value={newInvoice.invoice}
-              onChange={(e) =>
-                setNewInvoice({ ...newInvoice, invoice: e.target.value })
-              }
-            />
-            <Input
-              placeholder="Payment Status"
-              value={newInvoice.paymentStatus}
-              onChange={(e) =>
-                setNewInvoice({ ...newInvoice, paymentStatus: e.target.value })
-              }
-            />
-            <Input
-              placeholder="Payment Method"
-              value={newInvoice.paymentMethod}
-              onChange={(e) =>
-                setNewInvoice({ ...newInvoice, paymentMethod: e.target.value })
-              }
-            />
-            <Input
-              placeholder="Total Amount ($)"
-              value={newInvoice.totalAmount}
-              onChange={(e) =>
-                setNewInvoice({ ...newInvoice, totalAmount: e.target.value })
-              }
-            />
-          </div>
+
+          <Tabs defaultValue="students" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="Details">Details</TabsTrigger>
+              <TabsTrigger value="Education">Education</TabsTrigger>
+              <TabsTrigger value="Credentials">Credentials</TabsTrigger>
+            </TabsList>
+
+            {/* Details Tab */}
+            <TabsContent value="Details">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Student Details</CardTitle>
+                  <CardDescription>
+                    Enter correct student details.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="space-y-2">
+                    <Label>Name</Label>
+                    <Input placeholder="Enter Name" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Address</Label>
+                    <Input placeholder="Subdivision | Barangay | City" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input placeholder="juan@example.com" />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Education Tab */}
+            <TabsContent value="Education">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Panel Members</CardTitle>
+                  <CardDescription>
+                    Enter details of panel members for thesis evaluation.
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-2">
+                  <div className="space-y-3">
+                    <Label>Id Number</Label>
+                    <Input placeholder="Enter Valid Id Number" />
+                  </div>
+
+                  <div className="space-y-3 w-full">
+                    <Label>College</Label>
+                    <Select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a College" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Fruits</SelectLabel>
+                          <SelectItem value="apple">Apple</SelectItem>
+                          <SelectItem value="banana">Banana</SelectItem>
+                          <SelectItem value="blueberry">Blueberry</SelectItem>
+                          <SelectItem value="grapes">Grapes</SelectItem>
+                          <SelectItem value="pineapple">Pineapple</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3 w-full">
+                    <Label>Department</Label>
+
+                    <Select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Fruits</SelectLabel>
+                          <SelectItem value="apple">Apple</SelectItem>
+                          <SelectItem value="banana">Banana</SelectItem>
+                          <SelectItem value="blueberry">Blueberry</SelectItem>
+                          <SelectItem value="grapes">Grapes</SelectItem>
+                          <SelectItem value="pineapple">Pineapple</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Credentials Tab */}
+            <TabsContent value="Credentials">
+              <Card>
+                <CardHeader>
+                  <CardTitle>User Credentials</CardTitle>
+                  <CardDescription>
+                    Enter user credentials for user login.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="space-y-2">
+                    <Label>Username</Label>
+                    <Input placeholder="Enter Username" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <Input placeholder="Enter Password" type="password" />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
           <DialogFooter>
-            <Button variant="ghost" onClick={handleCloseDialog}>
+            <Button
+              className="cursor-pointer"
+              variant="ghost"
+              onClick={handleCloseDialog}
+            >
               Cancel
             </Button>
             <Button className="cursor-pointer" onClick={handleAddInvoice}>
               Add User
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* delete modal */}
+      <Dialog open={deleteModal} onOpenChange={setDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove User Data</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove this user?
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              className="cursor-pointer"
+              variant="ghost"
+              onClick={() => setDeleteModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button className="cursor-pointer" variant={"destructive"}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* update user data  */}
+      <Dialog open={updateModal} onOpenChange={setUpdateModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Update User Data</DialogTitle>
+          </DialogHeader>
+
+          <Tabs defaultValue="students" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="Details">Details</TabsTrigger>
+              <TabsTrigger value="Education">Education</TabsTrigger>
+              <TabsTrigger value="Credentials">Credentials</TabsTrigger>
+            </TabsList>
+
+            {/* Details Tab */}
+            <TabsContent value="Details">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Student Details</CardTitle>
+                  <CardDescription>
+                    Enter correct student details.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="space-y-2">
+                    <Label>Name</Label>
+                    <Input placeholder="Enter Name" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Address</Label>
+                    <Input placeholder="Subdivision | Barangay | City" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input placeholder="juan@example.com" />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Education Tab */}
+            <TabsContent value="Education">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Panel Members</CardTitle>
+                  <CardDescription>
+                    Enter details of panel members for thesis evaluation.
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-2">
+                  <div className="space-y-3">
+                    <Label>Id Number</Label>
+                    <Input placeholder="Enter Valid Id Number" />
+                  </div>
+
+                  <div className="space-y-3 w-full">
+                    <Label>College</Label>
+                    <Select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a College" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Fruits</SelectLabel>
+                          <SelectItem value="apple">Apple</SelectItem>
+                          <SelectItem value="banana">Banana</SelectItem>
+                          <SelectItem value="blueberry">Blueberry</SelectItem>
+                          <SelectItem value="grapes">Grapes</SelectItem>
+                          <SelectItem value="pineapple">Pineapple</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3 w-full">
+                    <Label>Department</Label>
+
+                    <Select>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Fruits</SelectLabel>
+                          <SelectItem value="apple">Apple</SelectItem>
+                          <SelectItem value="banana">Banana</SelectItem>
+                          <SelectItem value="blueberry">Blueberry</SelectItem>
+                          <SelectItem value="grapes">Grapes</SelectItem>
+                          <SelectItem value="pineapple">Pineapple</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Credentials Tab */}
+            <TabsContent value="Credentials">
+              <Card>
+                <CardHeader>
+                  <CardTitle>User Credentials</CardTitle>
+                  <CardDescription>
+                    Enter user credentials for user login.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="space-y-2">
+                    <Label>Username</Label>
+                    <Input placeholder="Enter Username" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Password</Label>
+                    <Input placeholder="Enter Password" type="password" />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter>
+            <Button
+              className="cursor-pointer"
+              variant="ghost"
+              onClick={() => setUpdateModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button className="cursor-pointer">Update</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

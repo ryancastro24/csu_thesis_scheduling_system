@@ -9,6 +9,9 @@ import UsersPage from "./pages/UsersPage";
 import MyCalendar from "./pages/MyCalendar";
 import MyStudent from "./pages/MyStudent";
 import Schedules from "./pages/Schedules";
+import ManageProfile from "./pages/ManageProfile";
+import Settings from "./pages/Settings";
+
 const router = createBrowserRouter([
   {
     path: "/",
@@ -34,6 +37,16 @@ const router = createBrowserRouter([
       {
         path: "schedules",
         element: <Schedules />,
+      },
+
+      {
+        path: "manageprofile",
+        element: <ManageProfile />,
+      },
+
+      {
+        path: "settings",
+        element: <Settings />,
       },
     ],
   },

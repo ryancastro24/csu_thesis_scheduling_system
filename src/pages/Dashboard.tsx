@@ -8,6 +8,8 @@ import { IoIosSchool } from "react-icons/io";
 import { AiFillSchedule } from "react-icons/ai";
 import { LuBellRing } from "react-icons/lu";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
+import { FaUserEdit } from "react-icons/fa";
+import { RiSettings3Fill } from "react-icons/ri";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 
@@ -44,6 +46,9 @@ const Dashboard = () => {
         <Separator />
         <div>
           <ul className="w-full px-2 flex flex-col gap-3">
+            <h2 className="text-sm mt-4 py-2 px-3 rounded dark:bg-[#303030] bg-slate-200">
+              Navigation
+            </h2>
             <li
               onClick={() => navigate("/dashboard/users")}
               className={`hover:bg-orange-500 ${
@@ -84,7 +89,7 @@ const Dashboard = () => {
               <span className="text-lg">
                 <IoIosSchool />
               </span>
-              My students
+              My Advisees
             </li>
 
             <li
@@ -99,6 +104,38 @@ const Dashboard = () => {
                 <AiFillSchedule />
               </span>{" "}
               Schedules
+            </li>
+
+            <h2 className="text-sm mt-4 py-2 px-3 rounded dark:bg-[#303030] bg-slate-200">
+              User Profile
+            </h2>
+
+            <li
+              onClick={() => navigate("/dashboard/manageprofile")}
+              className={`hover:bg-orange-500 ${
+                location.pathname === "/dashboard/manageprofile"
+                  ? "bg-orange-500 text-white"
+                  : ""
+              } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
+            >
+              <span className="text-lg">
+                <FaUserEdit />{" "}
+              </span>{" "}
+              Manage Profile
+            </li>
+
+            <li
+              onClick={() => navigate("/dashboard/settings")}
+              className={`hover:bg-orange-500 ${
+                location.pathname === "/dashboard/settings"
+                  ? "bg-orange-500 text-white"
+                  : ""
+              } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
+            >
+              <span className="text-lg">
+                <RiSettings3Fill />{" "}
+              </span>{" "}
+              Settings
             </li>
           </ul>
         </div>
@@ -117,10 +154,18 @@ const Dashboard = () => {
                 <h1 className="ml-3 mt-3">My Calendar</h1>
               )}
               {location.pathname === "/dashboard/students" && (
-                <h1 className="ml-3 mt-3">My Students</h1>
+                <h1 className="ml-3 mt-3">My Advisees</h1>
               )}
               {location.pathname === "/dashboard/schedules" && (
                 <h1 className="ml-3 mt-3">Schedules</h1>
+              )}
+
+              {location.pathname === "/dashboard/manageprofile" && (
+                <h1 className="ml-3 mt-3">Manage Profile</h1>
+              )}
+
+              {location.pathname === "/dashboard/settings" && (
+                <h1 className="ml-3 mt-3">Settings</h1>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -153,8 +198,8 @@ const Dashboard = () => {
               </DialogHeader>
 
               <div className="flex flex-col gap-3 ">
-                <div className="dark:bg-[#303030] rounded w-full h-[80px]"></div>
-                <div className="dark:bg-[#303030] rounded w-full h-[80px]"></div>
+                <div className="dark:bg-[#303030] bg-slate-100 rounded w-full h-[80px]"></div>
+                <div className="dark:bg-[#303030] bg-slate-100 rounded w-full h-[80px]"></div>
               </div>
 
               <DialogFooter>
