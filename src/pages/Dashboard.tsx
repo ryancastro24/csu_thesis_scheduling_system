@@ -39,8 +39,8 @@ const Dashboard = () => {
           </Avatar>
 
           <div>
-            <h1 className="text-lg ">Hello, Ryan</h1>
-            <h2 className="text-xs  ">181-02048</h2>
+            <h1 className="text-lg ">Justine Ella</h1>
+            <h2 className="text-xs  ">211-01234</h2>
           </div>
         </div>
         <Separator />
@@ -53,7 +53,7 @@ const Dashboard = () => {
               onClick={() => navigate("/dashboard/users")}
               className={`hover:bg-orange-500 ${
                 location.pathname === "/dashboard/users"
-                  ? "bg-orange-500 text-white"
+                  ? "bg-orange-500  text-white"
                   : ""
               } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
             >

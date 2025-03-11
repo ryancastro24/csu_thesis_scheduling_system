@@ -5,13 +5,17 @@ import LoginPage from "./pages/LoginPage";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "./components/ui/theme-provider";
 import Dashboard from "./pages/Dashboard";
-import UsersPage from "./pages/UsersPage";
+import UsersPage, {
+  loader as UsersPageLoader,
+  action as UsersPageAction,
+} from "./pages/UsersPage";
 import MyCalendar from "./pages/MyCalendar";
 import MyStudent from "./pages/MyStudent";
 import Schedules from "./pages/Schedules";
 import ManageProfile from "./pages/ManageProfile";
 import Settings from "./pages/Settings";
-
+import { action as DestroyUser } from "./destroy/destroyUser";
+import { Toaster } from "@/components/ui/sonner";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -25,6 +29,14 @@ const router = createBrowserRouter([
       {
         path: "users",
         element: <UsersPage />,
+        loader: UsersPageLoader,
+        action: UsersPageAction,
+        children: [
+          {
+            path: ":userId/destroy",
+            action: DestroyUser,
+          },
+        ],
       },
       {
         path: "calendar",
@@ -56,6 +68,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <RouterProvider router={router} />
+      <Toaster />
     </ThemeProvider>
   </StrictMode>
 );

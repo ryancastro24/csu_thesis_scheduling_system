@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "sonner";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,7 +46,6 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
-
 import {
   Card,
   CardContent,
@@ -54,22 +54,59 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { invoices as sampleInvoices } from "@/lib/sampleData";
+import { getDepartments, addUsertData, getUsers } from "@/backend_api/users";
+import { useLoaderData, useFetcher, ActionFunction } from "react-router-dom";
 
 const ITEMS_PER_PAGE = 10;
 
+// loader function
+export async function loader() {
+  const departments = await getDepartments();
+  const users = await getUsers();
+  console.log(departments);
+  return { departments, users };
+}
+
+//action function
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData();
+  const data: Record<string, FormDataEntryValue> = Object.fromEntries(
+    formData.entries()
+  );
+
+  console.log("action data: ", data);
+
+  const userData = await addUsertData(data);
+
+  console.log(userData);
+
+  return "hello world";
+};
+
 export default function UsersPage() {
-  const [invoices, setInvoices] = useState(sampleInvoices);
+  const { departments, users } = useLoaderData();
+  console.log(users);
+
+  const fetcher = useFetcher();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [updateModal, setUpdateModal] = useState(false);
-  const [newInvoice, setNewInvoice] = useState({
-    invoice: "",
-    paymentStatus: "",
-    paymentMethod: "",
-    totalAmount: "",
+  const [selectedUserId, setSelectedUserId] = useState("");
+  console.log("fetcher state: ", fetcher.state);
+  const [newUser, setNewUser] = useState({
+    firstname: "",
+    middlename: "",
+    lastname: "",
+    suffix: "",
+    email: "",
+    id_number: "",
+    college: "",
+    departmentId: "",
+    userType: "",
+    username: "",
+    password: "",
   });
 
   // Handle search input change
@@ -78,16 +115,19 @@ export default function UsersPage() {
     setCurrentPage(1);
   };
 
-  // Filter invoices based on search query
-  const filteredInvoices = invoices.filter(
-    (invoice) =>
-      invoice.invoice.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.paymentStatus.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.paymentMethod.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredUsers = users.filter(
+    (user: any) =>
+      user.firstname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.middlename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.lastname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.id_number
+        .toString()
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) // Ensure idnumber is a string
   );
 
-  const totalPages = Math.ceil(filteredInvoices.length / ITEMS_PER_PAGE);
-  const currentItems = filteredInvoices.slice(
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const currentUsers = filteredUsers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
@@ -100,12 +140,6 @@ export default function UsersPage() {
 
   // Handle opening and closing the dialog
   const handleOpenDialog = () => {
-    setNewInvoice({
-      invoice: "",
-      paymentStatus: "",
-      paymentMethod: "",
-      totalAmount: "",
-    });
     setIsDialogOpen(true);
   };
 
@@ -113,21 +147,27 @@ export default function UsersPage() {
     setIsDialogOpen(false);
   };
 
-  // Handle adding a new invoice
-  const handleAddInvoice = () => {
-    if (
-      !newInvoice.invoice ||
-      !newInvoice.paymentStatus ||
-      !newInvoice.paymentMethod ||
-      !newInvoice.totalAmount
-    ) {
-      alert("Please fill in all fields.");
-      return;
-    }
-
-    setInvoices([newInvoice, ...invoices]); // Add new invoice at the top
-    handleCloseDialog();
+  const handleSubmit = (e: any) => {
+    e.preventDefault(); // Prevent default form submission
+    console.log("Submitting Form:", newUser);
+    fetcher.submit(newUser, { method: "POST" });
   };
+  useEffect(() => {
+    if (!fetcher.data || !fetcher.data.message) return; // Ensure fetcher.data exists
+
+    console.log("Fetcher data message:", fetcher.data.message); // Debugging log
+
+    if (fetcher.data.message.includes("User added successfully")) {
+      console.log("this works!");
+      toast.success(fetcher.data.message);
+      setIsDialogOpen(false);
+    } else if (fetcher.data.message.includes("User deleted successfully")) {
+      toast.success(fetcher.data.message);
+      setDeleteModal(false);
+    } else {
+      toast.error("An error occurred!");
+    }
+  }, [fetcher.data]);
 
   return (
     <div className="space-y-4 mt-5">
@@ -153,27 +193,31 @@ export default function UsersPage() {
 
       {/* Invoice Table */}
       <Table>
-        <TableCaption>A list of your recent invoices.</TableCaption>
+        <TableCaption>List of users</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[100px]">Invoice</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Method</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead className="text-right">Action</TableHead>
+            <TableHead className="w-[100px]">Name</TableHead>
+            <TableHead className="text-center">Id Number</TableHead>
+            <TableHead className="text-center">Email</TableHead>
+            <TableHead className="text-center">Type</TableHead>
+            <TableHead className="text-center">Department</TableHead>
+            <TableHead className="text-center">Action</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {currentItems.length > 0 ? (
-            currentItems.map((invoice) => (
-              <TableRow key={invoice.invoice}>
-                <TableCell className="font-medium">{invoice.invoice}</TableCell>
-                <TableCell>{invoice.paymentStatus}</TableCell>
-                <TableCell>{invoice.paymentMethod}</TableCell>
-                <TableCell className="text-right">
-                  {invoice.totalAmount}
+          {currentUsers.length > 0 ? (
+            currentUsers.map((val: any) => (
+              <TableRow key={val._id}>
+                <TableCell className="w-1/4 text-left">
+                  {val.firstname} {val.middlename.split("")[0]} {val.lastname}
                 </TableCell>
-                <TableCell className="flex justify-end pr-5 items-center">
+                <TableCell className="text-center">{val.id_number}</TableCell>
+                <TableCell className="text-center">{val.email}</TableCell>
+                <TableCell className="text-center">{val.userType}</TableCell>
+                <TableCell className="text-center">
+                  {val.departmentId.acronym}
+                </TableCell>
+                <TableCell className="text-center flex justify-end pr-5 items-center">
                   <DropdownMenu>
                     <DropdownMenuTrigger className="text-lg cursor-pointer">
                       <BsThreeDotsVertical />
@@ -183,7 +227,10 @@ export default function UsersPage() {
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="text-red-500"
-                        onClick={() => setDeleteModal(true)}
+                        onClick={() => {
+                          setDeleteModal(true);
+                          setSelectedUserId(val._id);
+                        }}
                       >
                         Delete
                       </DropdownMenuItem>
@@ -198,7 +245,7 @@ export default function UsersPage() {
           ) : (
             <TableRow>
               <TableCell colSpan={5} className="text-center">
-                No invoices found.
+                No vals found.
               </TableCell>
             </TableRow>
           )}
@@ -241,137 +288,230 @@ export default function UsersPage() {
       {/* Add user Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
-          </DialogHeader>
+          <fetcher.Form method="POST" onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+            </DialogHeader>
 
-          <Tabs defaultValue="students" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="Details">Details</TabsTrigger>
-              <TabsTrigger value="Education">Education</TabsTrigger>
-              <TabsTrigger value="Credentials">Credentials</TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue="students" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="Details">Details</TabsTrigger>
+                <TabsTrigger value="Education">Education</TabsTrigger>
+                <TabsTrigger value="Credentials">Credentials</TabsTrigger>
+              </TabsList>
 
-            {/* Details Tab */}
-            <TabsContent value="Details">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Student Details</CardTitle>
-                  <CardDescription>
-                    Enter correct student details.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <Input placeholder="Enter Name" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Address</Label>
-                    <Input placeholder="Subdivision | Barangay | City" />
-                  </div>
+              {/* Details Tab */}
+              <TabsContent value="Details">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Student Details</CardTitle>
+                    <CardDescription>
+                      Enter correct student details.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Firstname</Label>
+                        <Input
+                          defaultValue={newUser.firstname}
+                          onChange={(e) =>
+                            setNewUser({
+                              ...newUser,
+                              firstname: e.target.value,
+                            })
+                          }
+                          name="firstname"
+                          placeholder="Enter Firsname"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Middlename</Label>
+                        <Input
+                          defaultValue={newUser.middlename}
+                          onChange={(e) =>
+                            setNewUser({
+                              ...newUser,
+                              middlename: e.target.value,
+                            })
+                          }
+                          name="middlename"
+                          placeholder="Enter Middlename"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input placeholder="juan@example.com" />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    <div className="grid grid-cols-[1fr_100px] gap-3">
+                      <div className="space-y-2">
+                        <Label>Lastname</Label>
+                        <Input
+                          defaultValue={newUser.lastname}
+                          onChange={(e) =>
+                            setNewUser({ ...newUser, lastname: e.target.value })
+                          }
+                          name="lastname"
+                          placeholder="Enter Lastname"
+                        />
+                      </div>
 
-            {/* Education Tab */}
-            <TabsContent value="Education">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Panel Members</CardTitle>
-                  <CardDescription>
-                    Enter details of panel members for thesis evaluation.
-                  </CardDescription>
-                </CardHeader>
+                      <div className="space-y-2">
+                        <Label>Suffix</Label>
+                        <Input
+                          defaultValue={newUser.suffix}
+                          onChange={(e) =>
+                            setNewUser({ ...newUser, suffix: e.target.value })
+                          }
+                          name="suffix"
+                          placeholder="e.g Jr, Sr"
+                        />
+                      </div>
+                    </div>
 
-                <CardContent className="space-y-2">
-                  <div className="space-y-3">
-                    <Label>Id Number</Label>
-                    <Input placeholder="Enter Valid Id Number" />
-                  </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input
+                        defaultValue={newUser.email}
+                        onChange={(e) =>
+                          setNewUser({ ...newUser, email: e.target.value })
+                        }
+                        name="email"
+                        placeholder="sample@gmail.com"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  <div className="space-y-3 w-full">
-                    <Label>College</Label>
-                    <Select>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a College" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Fruits</SelectLabel>
-                          <SelectItem value="apple">Apple</SelectItem>
-                          <SelectItem value="banana">Banana</SelectItem>
-                          <SelectItem value="blueberry">Blueberry</SelectItem>
-                          <SelectItem value="grapes">Grapes</SelectItem>
-                          <SelectItem value="pineapple">Pineapple</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Education Tab */}
+              <TabsContent value="Education">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Panel Members</CardTitle>
+                    <CardDescription>
+                      Enter details of panel members for thesis evaluation.
+                    </CardDescription>
+                  </CardHeader>
 
-                  <div className="space-y-3 w-full">
-                    <Label>Department</Label>
+                  <CardContent className="space-y-2">
+                    <div className="space-y-3">
+                      <Label>Id Number</Label>
 
-                    <Select>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Fruits</SelectLabel>
-                          <SelectItem value="apple">Apple</SelectItem>
-                          <SelectItem value="banana">Banana</SelectItem>
-                          <SelectItem value="blueberry">Blueberry</SelectItem>
-                          <SelectItem value="grapes">Grapes</SelectItem>
-                          <SelectItem value="pineapple">Pineapple</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                      <Input
+                        name="id_number"
+                        defaultValue={newUser.id_number}
+                        onChange={(e) =>
+                          setNewUser({ ...newUser, id_number: e.target.value })
+                        }
+                        placeholder="Enter Valid Id Number"
+                      />
+                    </div>
 
-            {/* Credentials Tab */}
-            <TabsContent value="Credentials">
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Credentials</CardTitle>
-                  <CardDescription>
-                    Enter user credentials for user login.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-2">
-                    <Label>Username</Label>
-                    <Input placeholder="Enter Username" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Password</Label>
-                    <Input placeholder="Enter Password" type="password" />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                    <div className="space-y-3 w-full">
+                      <Label>Department</Label>
 
-          <DialogFooter>
-            <Button
-              className="cursor-pointer"
-              variant="ghost"
-              onClick={handleCloseDialog}
-            >
-              Cancel
-            </Button>
-            <Button className="cursor-pointer" onClick={handleAddInvoice}>
-              Add User
-            </Button>
-          </DialogFooter>
+                      <Select
+                        name="deparmentId"
+                        defaultValue={newUser.departmentId}
+                        onValueChange={(value) =>
+                          setNewUser({ ...newUser, departmentId: value })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Departments</SelectLabel>
+                            {departments.map((dept: any) => (
+                              <SelectItem key={dept._id} value={dept._id}>
+                                {dept.acronym}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3 w-full">
+                      <Label>User Type</Label>
+
+                      <Select
+                        name="userType"
+                        defaultValue={newUser.userType}
+                        onValueChange={(value) =>
+                          setNewUser({ ...newUser, userType: value })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select User Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="student">Student</SelectItem>
+                            <SelectItem value="chairperson">
+                              Chairperson
+                            </SelectItem>
+                            <SelectItem value="faculty">Faculty</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Credentials Tab */}
+              <TabsContent value="Credentials">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Credentials</CardTitle>
+                    <CardDescription>
+                      Enter user credentials for user login.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="space-y-2">
+                      <Label>Username</Label>
+
+                      <Input
+                        name="username"
+                        defaultValue={newUser.username}
+                        onChange={(e) =>
+                          setNewUser({ ...newUser, username: e.target.value })
+                        }
+                        placeholder="Enter Username"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Password</Label>
+                      <Input
+                        name="password"
+                        defaultValue={newUser.password}
+                        onChange={(e) =>
+                          setNewUser({ ...newUser, password: e.target.value })
+                        }
+                        placeholder="Enter Password"
+                        type="password"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter>
+              <Button
+                className="cursor-pointer"
+                variant="ghost"
+                onClick={handleCloseDialog}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" className="cursor-pointer">
+                {fetcher.state === "submitting" ? "Loading..." : "Add user"}
+              </Button>
+            </DialogFooter>
+          </fetcher.Form>
         </DialogContent>
       </Dialog>
 
@@ -393,9 +533,15 @@ export default function UsersPage() {
             >
               Cancel
             </Button>
-            <Button className="cursor-pointer" variant={"destructive"}>
-              Delete
-            </Button>
+
+            <fetcher.Form
+              method="post"
+              action={`/dashboard/users/${selectedUserId}/destroy`}
+            >
+              <Button className="cursor-pointer" variant={"destructive"}>
+                {fetcher.state === "submitting" ? "Deleting..." : "Delete"}
+              </Button>
+            </fetcher.Form>
           </DialogFooter>
         </DialogContent>
       </Dialog>
