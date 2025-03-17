@@ -1,9 +1,8 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { Form, ActionFunction, useActionData } from "react-router-dom";
 import { format } from "date-fns";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
-import { invoices } from "@/lib/sampleData";
+
 import {
   Card,
   CardContent,
@@ -18,9 +17,7 @@ import { DateTimeRangePicker } from "@/systemComponents/DateAndTimeRangePicker";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -29,7 +26,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { Search, Venus } from "lucide-react";
+import { Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -56,7 +53,7 @@ import {
 } from "@/components/ui/command";
 
 type Venues = {
-  id: number;
+  label: string;
   value: string;
 };
 
@@ -104,17 +101,13 @@ export async function loader() {
 
 const ITEMS_PER_PAGE = 6;
 const Schedules = () => {
-  const { students, faculty, chairpersons, thesisSchedules } = useLoaderData();
+  const { students, faculty, thesisSchedules } = useLoaderData();
   const actionData = useActionData();
 
   const [schedule, setSchedule] = useState("");
   const [, setOpenThesisModal] = useState(false);
 
   const [thesisType, setThesisType] = useState("");
-  const [selectedChairperson, setSelectedChairperson] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
 
   const [selectedFaculty, setSelectedFaculty] = useState<{
     id: string;
@@ -156,7 +149,7 @@ const Schedules = () => {
     name: string;
   } | null>(null);
 
-  const [dateRange, setDateRange] = useState<DateRange>({
+  const [dateRange, setDateRange] = useState({
     from: undefined,
     to: undefined,
   });
@@ -205,7 +198,7 @@ const Schedules = () => {
   };
 
   // Filter schedules based on search query
-  const filteredSchedules = thesisSchedules.filter((val) =>
+  const filteredSchedules = thesisSchedules.filter((val: any) =>
     val.thesisTitle.toLowerCase().includes(searchQuery.toLowerCase())
   );
   // Pagination logic
@@ -253,7 +246,7 @@ const Schedules = () => {
 
       {/* Schedules Grid */}
       <div className="grid grid-cols-3 gap-3">
-        {paginatedSchedules.map((val) => (
+        {paginatedSchedules.map((val: any) => (
           <Card key={val?._id} className="dark:bg-[#303030] bg-slate-100">
             <CardHeader>
               <CardTitle>{val?.thesisTitle}</CardTitle>
@@ -295,25 +288,27 @@ const Schedules = () => {
                         <div>
                           <h2>Researchers</h2>
                           <ol>
-                            {val?.students.map((student, index) => {
-                              // Extract the full name (handle optional middlename and suffix)
-                              const fullName = `${student.firstname} ${
-                                student.middlename
-                                  ? student.middlename + " "
-                                  : ""
-                              }${student.lastname}${
-                                student.suffix ? " " + student.suffix : ""
-                              }`;
+                            {val?.students.map(
+                              (student: any, index: number) => {
+                                // Extract the full name (handle optional middlename and suffix)
+                                const fullName = `${student.firstname} ${
+                                  student.middlename
+                                    ? student.middlename + " "
+                                    : ""
+                                }${student.lastname}${
+                                  student.suffix ? " " + student.suffix : ""
+                                }`;
 
-                              return (
-                                <li
-                                  className="text-sm opacity-50 "
-                                  key={student._id}
-                                >
-                                  {index + 1}. {fullName}
-                                </li>
-                              );
-                            })}
+                                return (
+                                  <li
+                                    className="text-sm opacity-50 "
+                                    key={student._id}
+                                  >
+                                    {index + 1}. {fullName}
+                                  </li>
+                                );
+                              }
+                            )}
                           </ol>
                         </div>
 
@@ -336,7 +331,7 @@ const Schedules = () => {
                       <div>
                         <h2>Panels</h2>
                         <ol>
-                          {val?.panels.map((panel, index) => {
+                          {val?.panels.map((panel: any, index: number) => {
                             // Extract the full name (handle optional middlename and suffix)
                             const fullName = `${panel.firstname} ${
                               panel.middlename ? panel.middlename + " " : ""
@@ -809,7 +804,7 @@ interface SearchableDropdownProps {
     lastname: string;
     suffix?: string;
   }[];
-  onSelect: (selectedValue: { id: string; name: string }) => void;
+
   value: { id: string; name: string } | null; // Expect an object, not a string
   onValueChange: (value: { id: string; name: string }) => void;
 }
@@ -817,7 +812,7 @@ interface SearchableDropdownProps {
 function SearchableDropdown({
   label,
   options,
-  onSelect,
+
   value,
   onValueChange,
 }: SearchableDropdownProps) {
