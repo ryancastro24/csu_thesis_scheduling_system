@@ -11,11 +11,15 @@ import UsersPage, {
 } from "./pages/UsersPage";
 import MyCalendar from "./pages/MyCalendar";
 import MyStudent from "./pages/MyStudent";
-import Schedules from "./pages/Schedules";
+import Schedules, {
+  loader as SchedulesLoader,
+  action as SchedulesAction,
+} from "./pages/Schedules";
 import ManageProfile from "./pages/ManageProfile";
 import Settings from "./pages/Settings";
 import { action as DestroyUser } from "./destroy/destroyUser";
 import { Toaster } from "@/components/ui/sonner";
+import UsersErrorPage from "./ErrorResponses/UsersErrorPage";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -31,6 +35,7 @@ const router = createBrowserRouter([
         element: <UsersPage />,
         loader: UsersPageLoader,
         action: UsersPageAction,
+        errorElement: <UsersErrorPage />,
         children: [
           {
             path: ":userId/destroy",
@@ -49,6 +54,8 @@ const router = createBrowserRouter([
       {
         path: "schedules",
         element: <Schedules />,
+        loader: SchedulesLoader,
+        action: SchedulesAction,
       },
 
       {

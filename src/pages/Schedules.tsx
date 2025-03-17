@@ -1,7 +1,9 @@
 // @ts-nocheck
-import { useState } from "react";
-import { invoices } from "@/lib/sampleData";
+import { useState, useEffect } from "react";
+import { Form, ActionFunction, useActionData } from "react-router-dom";
+import { format } from "date-fns";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
+import { invoices } from "@/lib/sampleData";
 import {
   Card,
   CardContent,
@@ -12,21 +14,39 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { DateTimeRangePicker } from "@/systemComponents/DateAndTimeRangePicker";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { Search } from "lucide-react";
+import { Search, Venus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FaEye } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
+import { AiFillEdit } from "react-icons/ai";
+import { FaCircleMinus, FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
+
 import {
   Command,
   CommandInput,
@@ -35,32 +55,128 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 
-type Options = {
+type Venues = {
   id: number;
   value: string;
 };
-const studentOptions: Options[] = [
-  { id: 1, value: "Student A" },
-  { id: 2, value: "Student B" },
-  { id: 3, value: "Student C" },
-];
 
-const panelOptions: Options[] = [
-  { id: 1, value: "Panelist A" },
-  { id: 2, value: "Panelist B" },
-  { id: 3, value: "Panelist C" },
-  { id: 4, value: "Chairperson" },
+const venueOptions: Venues[] = [
+  { label: "Room 101", value: "Room 101" },
+  { label: "Room 202", value: "Room 202" },
+  { label: "Main Hall", value: "Main Hall" },
+  { label: "Online (Zoom)", value: "Online (Zoom)" },
 ];
+import { getStudents, getfaculty, getChairpersons } from "@/backend_api/users";
+import { useLoaderData } from "react-router-dom";
+import { generateSchedule } from "@/backend_api/schedules";
+import {
+  createThesisSchedule,
+  getThesisDocuments,
+} from "@/backend_api/thesisDocument";
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData();
+  const data: Record<string, FormDataEntryValue> = Object.fromEntries(
+    formData.entries()
+  );
 
-const venueOptions: Options[] = [
-  { id: 1, value: "Room 101" },
-  { id: 2, value: "Room 202" },
-  { id: 3, value: "Main Hall" },
-  { id: 4, value: "Online (Zoom)" },
-];
+  console.log(data);
+
+  if (data?.submit === "submitSchedule") {
+    const thesisSchedule = await createThesisSchedule(data);
+    console.log(thesisSchedule);
+    return thesisSchedule;
+  }
+
+  if (data?.submit === "generateSchedule") {
+    const schedule = await generateSchedule(data);
+    console.log(schedule);
+    return schedule;
+  }
+};
+export async function loader() {
+  const students = await getStudents();
+  const faculty = await getfaculty();
+  const chairpersons = await getChairpersons();
+  const thesisSchedules = await getThesisDocuments();
+
+  return { students, faculty, chairpersons, thesisSchedules };
+}
 
 const ITEMS_PER_PAGE = 6;
 const Schedules = () => {
+  const { students, faculty, chairpersons, thesisSchedules } = useLoaderData();
+  const actionData = useActionData();
+
+  const [schedule, setSchedule] = useState("");
+  const [, setOpenThesisModal] = useState(false);
+
+  const [thesisType, setThesisType] = useState("");
+  const [selectedChairperson, setSelectedChairperson] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedFaculty, setSelectedFaculty] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedFaculty1, setSelectedFaculty1] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedFaculty2, setSelectedFaculty2] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedFaculty3, setSelectedFaculty3] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedFaculty4, setSelectedFaculty4] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedStudent1, setSelectedStudent1] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedStudent2, setSelectedStudent2] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedStudent3, setSelectedStudent3] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [dateRange, setDateRange] = useState<DateRange>({
+    from: undefined,
+    to: undefined,
+  });
+
+  const [thesisTitle, setThesisTitle] = useState("");
+  const [venue, setVenue] = useState("");
+
+  const formattedDateRange =
+    dateRange.from && dateRange.to
+      ? `${format(dateRange.from, "yyyy-MM-dd")} - ${format(
+          dateRange.to,
+          "yyyy-M-d"
+        )}`
+      : "Select date range";
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+
+  console.log(formattedDateRange);
+  console.log(startTime);
+  console.log(endTime);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -89,8 +205,8 @@ const Schedules = () => {
   };
 
   // Filter schedules based on search query
-  const filteredSchedules = invoices.filter((val) =>
-    val.invoice.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSchedules = thesisSchedules.filter((val) =>
+    val.thesisTitle.toLowerCase().includes(searchQuery.toLowerCase())
   );
   // Pagination logic
   const totalPages = Math.ceil(filteredSchedules.length / ITEMS_PER_PAGE);
@@ -108,6 +224,13 @@ const Schedules = () => {
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
+
+  useEffect(() => {
+    if (actionData?.message?.startsWith("Available Date")) {
+      const date = actionData.message.split(": ")[1]; // Extracts the date part
+      setSchedule(date);
+    }
+  }, [actionData]);
   return (
     <div className="w-full h-full p-4">
       {/* Header with Search Input and Add Schedule Button */}
@@ -131,16 +254,199 @@ const Schedules = () => {
       {/* Schedules Grid */}
       <div className="grid grid-cols-3 gap-3">
         {paginatedSchedules.map((val) => (
-          <Card key={val.invoice} className="dark:bg-[#303030] bg-slate-100">
+          <Card key={val?._id} className="dark:bg-[#303030] bg-slate-100">
             <CardHeader>
-              <CardTitle>{val.invoice}</CardTitle>
-              <CardDescription>Card Description</CardDescription>
+              <CardTitle>{val?.thesisTitle}</CardTitle>
+              <CardDescription>
+                Scheduled Date: {val?.schedule.date}
+              </CardDescription>
+              <CardDescription>
+                Time: {val?.schedule.time} | {val?.venue}
+              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p>Card Content</p>
+            <CardContent className="flex items-center gap-4">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    onClick={() => setOpenThesisModal(true)}
+                    className="cursor-pointer "
+                    size={"icon"}
+                    variant={"outline"}
+                  >
+                    <FaEye />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>{val?.thesisTitle}</DialogTitle>
+                    <DialogDescription>
+                      {val?.type == "proposal" ? "Proposal" : "Final"} |{" "}
+                      {val?.status === "pending"
+                        ? "Pending"
+                        : val?.status === "approved"
+                        ? "Approved"
+                        : "For Reschedule"}{" "}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div>
+                    <div className="grid grid-cols-2">
+                      {/* Researchers List */}
+                      <div>
+                        <div>
+                          <h2>Researchers</h2>
+                          <ol>
+                            {val?.students.map((student, index) => {
+                              // Extract the full name (handle optional middlename and suffix)
+                              const fullName = `${student.firstname} ${
+                                student.middlename
+                                  ? student.middlename + " "
+                                  : ""
+                              }${student.lastname}${
+                                student.suffix ? " " + student.suffix : ""
+                              }`;
+
+                              return (
+                                <li
+                                  className="text-sm opacity-50 "
+                                  key={student._id}
+                                >
+                                  {index + 1}. {fullName}
+                                </li>
+                              );
+                            })}
+                          </ol>
+                        </div>
+
+                        <div className="mt-2">
+                          <h2>Adviser</h2>
+                          <span className="text-sm opacity-50">
+                            {val?.adviser.firstname}
+                            {val?.adviser.middlename
+                              ? val?.adviser.middlename + " "
+                              : ""}
+                            {val?.adviser.lastname}
+                            {val?.adviser.suffix
+                              ? " " + val?.adviser.suffix
+                              : ""}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Panels List */}
+                      <div>
+                        <h2>Panels</h2>
+                        <ol>
+                          {val?.panels.map((panel, index) => {
+                            // Extract the full name (handle optional middlename and suffix)
+                            const fullName = `${panel.firstname} ${
+                              panel.middlename ? panel.middlename + " " : ""
+                            }${panel.lastname}${
+                              panel.suffix ? " " + panel.suffix : ""
+                            }`;
+
+                            return (
+                              <li
+                                className="text-sm opacity-50"
+                                key={panel._id}
+                              >
+                                {index + 1}. {fullName}
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      </div>
+                    </div>
+
+                    <div className="mt-2">
+                      <div>
+                        <h2>Time & Date Defense Schedule</h2>
+
+                        <div className="flex flex-col ">
+                          <span className="text-sm opacity-50">
+                            Date: {val.schedule.date}
+                          </span>
+                          <span className="text-sm opacity-50">
+                            Time: {val.schedule.time}
+                          </span>
+                          <span className="text-sm opacity-50">
+                            Venu : {val.venue}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                        Close
+                      </Button>
+                    </DialogClose>
+                    <Button className="cursor-pointer" type="submit">
+                      Download Manuscript
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    onClick={() => setOpenThesisModal(true)}
+                    className="cursor-pointer "
+                    size={"icon"}
+                    variant={"outline"}
+                  >
+                    <FaTrash />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle>Delete Thesis</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this thesis?
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                        Close
+                      </Button>
+                    </DialogClose>
+                    <Button
+                      className="cursor-pointer"
+                      variant={"destructive"}
+                      type="submit"
+                    >
+                      Delete
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Button
+                className="cursor-pointer "
+                size={"icon"}
+                variant={"outline"}
+              >
+                <AiFillEdit />
+              </Button>
             </CardContent>
             <CardFooter>
-              <p>Card Footer</p>
+              <p className="text-sm flex items-center gap-2">
+                {val?.status === "pending" ? (
+                  <FaCircleMinus />
+                ) : val?.status === "approved" ? (
+                  <FaCircleCheck />
+                ) : (
+                  <FaCircleXmark />
+                )}
+                {val?.status === "pending"
+                  ? "Pending"
+                  : val?.status === "approved"
+                  ? "Approved"
+                  : "For Reschedule"}
+              </p>
             </CardFooter>
           </Card>
         ))}
@@ -194,15 +500,32 @@ const Schedules = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {["Student 1", "Student 2", "Student 3", "Adviser"].map(
-                    (value, index) => (
-                      <SearchableDropdown
-                        key={index}
-                        value={value}
-                        options={studentOptions}
-                      />
-                    )
-                  )}
+                  <SearchableDropdown
+                    label="Student 1"
+                    options={students}
+                    value={selectedStudent1} // Pass the entire object
+                    onValueChange={setSelectedStudent1} // Ensure it updates correctly
+                  />
+
+                  <SearchableDropdown
+                    label="Student 2"
+                    options={students}
+                    value={selectedStudent2} // Pass the entire object
+                    onValueChange={setSelectedStudent2} // Ensure it updates correctly
+                  />
+                  <SearchableDropdown
+                    label="Student 3"
+                    value={selectedStudent3} // Pass the entire object
+                    onValueChange={setSelectedStudent3} // Ensure it updates correctly
+                    options={students}
+                  />
+
+                  <SearchableDropdown
+                    label="Adviser"
+                    value={selectedFaculty} // Pass the entire object
+                    onValueChange={setSelectedFaculty} // Ensure it updates correctly
+                    options={faculty}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -217,13 +540,33 @@ const Schedules = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {panelOptions.map((option) => (
-                    <SearchableDropdown
-                      key={option.id}
-                      value={option.value}
-                      options={panelOptions}
-                    />
-                  ))}
+                  <SearchableDropdown
+                    label="Panel 1"
+                    value={selectedFaculty1} // Pass the entire object
+                    onValueChange={setSelectedFaculty1} // Ensure it updates correctly
+                    options={faculty}
+                  />
+
+                  <SearchableDropdown
+                    label="Panel 2"
+                    value={selectedFaculty2} // Pass the entire object
+                    onValueChange={setSelectedFaculty2} // Ensure it updates correctly
+                    options={faculty}
+                  />
+
+                  <SearchableDropdown
+                    label="Panel 3"
+                    value={selectedFaculty3} // Pass the entire object
+                    onValueChange={setSelectedFaculty3} // Ensure it updates correctly
+                    options={faculty}
+                  />
+
+                  <SearchableDropdown
+                    label="Oral Adviser"
+                    value={selectedFaculty4} // Pass the entire object
+                    onValueChange={setSelectedFaculty4} // Ensure it updates correctly
+                    options={faculty}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -240,16 +583,146 @@ const Schedules = () => {
                 <CardContent className="space-y-2">
                   <div className="space-y-1">
                     <Label>Thesis Title</Label>
-                    <Input type="text" placeholder="Enter thesis title" />
+                    <Input
+                      value={thesisTitle}
+                      onChange={(e) => setThesisTitle(e.target.value)}
+                      type="text"
+                      placeholder="Enter thesis title"
+                    />
                   </div>
+
                   <div className="space-y-1">
-                    <SearchableDropdown value="Venue" options={venueOptions} />
+                    <Label>Venue</Label>
+                    <Select value={venue} onValueChange={setVenue}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Venue" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {venueOptions.map((val) => (
+                          <SelectItem key={val.label} value={val.value}>
+                            {val.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  <div className="space-y-1">
+                    <Label>Type</Label>
+                    <Select value={thesisType} onValueChange={setThesisType}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select Thesis Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={"proposal"}>Proposal</SelectItem>
+
+                        <SelectItem value={"final"}>Final</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div className="space-y-1">
                     <Label>Schedule Date</Label>
-                    <Button className="w-full cursor-pointer">
-                      Generate Date
-                    </Button>
+
+                    <DateTimeRangePicker
+                      dateRange={dateRange}
+                      setDateRange={setDateRange}
+                      startTime={startTime}
+                      setStartTime={setStartTime}
+                      endTime={endTime}
+                      setEndTime={setEndTime}
+                    />
+
+                    <Form method="POST">
+                      <Input
+                        value={formattedDateRange}
+                        type="hidden"
+                        name="dateRange"
+                      />
+
+                      <Input value={startTime} type="hidden" name="startTime" />
+
+                      <Input value={endTime} type="hidden" name="endTime" />
+                      <Input
+                        value={selectedFaculty2?.id}
+                        type="hidden"
+                        name="panel2"
+                      />
+                      <Input
+                        value={selectedFaculty1?.id}
+                        type="hidden"
+                        name="panel1"
+                      />
+                      <Input
+                        value={selectedFaculty2?.id}
+                        type="hidden"
+                        name="panel2"
+                      />
+                      <Input
+                        value={selectedFaculty3?.id}
+                        type="hidden"
+                        name="panel3"
+                      />
+                      <Input
+                        value={"67d2918b990acc26a58cb4be"}
+                        type="hidden"
+                        name="chairperson"
+                      />
+                      <Input
+                        value={"67d29ce1990acc26a58cb53a"}
+                        type="hidden"
+                        name="adminId"
+                      />
+
+                      <Input
+                        value={selectedFaculty4?.id}
+                        type="hidden"
+                        name="panel4"
+                      />
+                      <Button
+                        type="submit"
+                        name="submit"
+                        value={"generateSchedule"}
+                        disabled={
+                          selectedFaculty1 == null ||
+                          selectedFaculty2 == null ||
+                          selectedFaculty3 == null ||
+                          selectedFaculty4 == null ||
+                          startTime == "" ||
+                          endTime == "" ||
+                          dateRange.from == undefined ||
+                          dateRange.to == undefined
+                        }
+                        className="w-full cursor-pointer"
+                      >
+                        Generate Date
+                      </Button>
+                    </Form>
+                    <span className="text-sm text-red-500">
+                      {selectedFaculty1 == null ||
+                      selectedFaculty2 == null ||
+                      selectedFaculty3 == null ||
+                      selectedFaculty4 == null ||
+                      startTime == "" ||
+                      endTime == "" ||
+                      dateRange.from == undefined ||
+                      dateRange.to == undefined
+                        ? "Fill all panels field to generate"
+                        : ""}
+                    </span>
+
+                    <span
+                      className={`text-sm ${
+                        actionData?.message.startsWith("Available Date")
+                          ? "text-green-500"
+                          : "text-red-500"
+                      } `}
+                    >
+                      {actionData?.message.startsWith("Available Date") &&
+                        `${actionData?.message} (${startTime} - ${endTime})`}
+                      {!actionData?.message.startsWith("Available Date") &&
+                        actionData?.message}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -260,7 +733,64 @@ const Schedules = () => {
             <Button variant="ghost" onClick={handleDialogClose}>
               Cancel
             </Button>
-            <Button onClick={handleDialogSubmit}>Add Schedule</Button>
+
+            <Form method="POST">
+              <Input
+                value={selectedStudent1?.id}
+                type="hidden"
+                name="student1"
+              />
+              <Input
+                value={selectedStudent2?.id}
+                type="hidden"
+                name="student2"
+              />
+              <Input
+                value={selectedStudent3?.id}
+                type="hidden"
+                name="student3"
+              />
+              <Input value={selectedFaculty?.id} type="hidden" name="adviser" />
+              <Input
+                value={`${startTime} - ${endTime}`}
+                type="hidden"
+                name="time"
+              />
+
+              <Input value={thesisType} type="hidden" name="type" />
+
+              <Input value={selectedFaculty1?.id} type="hidden" name="panel1" />
+              <Input value={selectedFaculty2?.id} type="hidden" name="panel2" />
+              <Input value={selectedFaculty3?.id} type="hidden" name="panel3" />
+
+              <Input value={selectedFaculty4?.id} type="hidden" name="panel4" />
+              <Input value={thesisTitle} type="hidden" name="thesisTitle" />
+              <Input value={venue} type="hidden" name="venue" />
+              <Input value={schedule} type="hidden" name="date" />
+              <Button
+                name="submit"
+                value={"submitSchedule"}
+                disabled={
+                  selectedStudent1 == null ||
+                  selectedStudent2 == null ||
+                  selectedStudent3 == null ||
+                  selectedFaculty == null ||
+                  selectedFaculty1 == null ||
+                  selectedFaculty2 == null ||
+                  selectedFaculty3 == null ||
+                  selectedFaculty4 == null ||
+                  thesisTitle == "" ||
+                  venue == "" ||
+                  startTime == "" ||
+                  endTime == "" ||
+                  dateRange.from == undefined ||
+                  dateRange.to == undefined
+                }
+                onClick={handleDialogSubmit}
+              >
+                Add Schedule
+              </Button>
+            </Form>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -271,40 +801,65 @@ const Schedules = () => {
 export default Schedules;
 
 interface SearchableDropdownProps {
-  value: string;
-  options: { id: number; value: string }[];
+  label: string;
+  options: {
+    _id: string;
+    firstname: string;
+    middlename?: string;
+    lastname: string;
+    suffix?: string;
+  }[];
+  onSelect: (selectedValue: { id: string; name: string }) => void;
+  value: { id: string; name: string } | null; // Expect an object, not a string
+  onValueChange: (value: { id: string; name: string }) => void;
 }
 
-function SearchableDropdown({ value, options }: SearchableDropdownProps) {
-  const [selected, setSelected] = useState<string | null>(null);
+function SearchableDropdown({
+  label,
+  options,
+  onSelect,
+  value,
+  onValueChange,
+}: SearchableDropdownProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="space-y-1">
-      <Label>{value}</Label>
+      <Label>{label}</Label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-full justify-between">
-            {selected || `Select ${value}`}
+            {value ? value.name : `Select ${label}`}{" "}
+            {/* Ensure the name is displayed */}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full p-0">
           <Command>
-            <CommandInput placeholder={`Search ${value}`} />
+            <CommandInput placeholder={`Search ${label}`} />
             <CommandList>
               <CommandGroup>
-                {options.map((option) => (
-                  <CommandItem
-                    key={option.id}
-                    onSelect={() => {
-                      setSelected(option.value);
-                      setOpen(false);
-                    }}
-                    className="cursor-pointer"
-                  >
-                    {option.value}
-                  </CommandItem>
-                ))}
+                {options.map((option) => {
+                  const fullName = `${option.firstname} ${
+                    option.middlename ? option.middlename[0] + "." : ""
+                  } ${option.lastname} ${option.suffix ?? ""}`.trim();
+                  return (
+                    <CommandItem
+                      key={option._id}
+                      onSelect={() => {
+                        const selectedValue = {
+                          id: option._id,
+                          name: fullName,
+                        };
+                        onValueChange(selectedValue); // Persist selection
+
+                        setOpen(false);
+                      }}
+                      className="cursor-pointer"
+                    >
+                      {fullName}
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </Command>

@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -37,6 +38,7 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search } from "lucide-react"; // Import Lucide icon
 import {
   Dialog,
@@ -54,7 +56,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { getDepartments, addUsertData, getUsers } from "@/backend_api/users";
+import {
+  getDepartments,
+  addUsertData,
+  getUsers,
+  updateUserData,
+} from "@/backend_api/users";
 import { useLoaderData, useFetcher, ActionFunction } from "react-router-dom";
 
 const ITEMS_PER_PAGE = 10;
@@ -74,13 +81,19 @@ export const action: ActionFunction = async ({ request }) => {
     formData.entries()
   );
 
-  console.log("action data: ", data);
+  console.log(request.method);
 
-  const userData = await addUsertData(data);
+  if (request.method === "POST") {
+    const userData = await addUsertData(data);
 
-  console.log(userData);
+    return userData;
+  }
 
-  return "hello world";
+  if (request.method === "PUT") {
+    const userData = await updateUserData(data?.id, data);
+
+    return userData;
+  }
 };
 
 export default function UsersPage() {
@@ -88,13 +101,29 @@ export default function UsersPage() {
   console.log(users);
 
   const fetcher = useFetcher();
+
+  console.log("fetcher data:", fetcher.data);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [updateModal, setUpdateModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
-  console.log("fetcher state: ", fetcher.state);
+  const [selectedUser, setSelectedUser] = useState({
+    id: "",
+    firstname: "",
+    middlename: "",
+    lastname: "",
+    suffix: "",
+    email: "",
+    id_number: "",
+    college: "",
+    departmentId: "",
+    userType: "",
+    username: "",
+    password: "",
+  });
+
   const [newUser, setNewUser] = useState({
     firstname: "",
     middlename: "",
@@ -144,6 +173,19 @@ export default function UsersPage() {
   };
 
   const handleCloseDialog = () => {
+    setNewUser({
+      firstname: "",
+      middlename: "",
+      lastname: "",
+      suffix: "",
+      email: "",
+      id_number: "",
+      college: "",
+      departmentId: "",
+      userType: "",
+      username: "",
+      password: "",
+    });
     setIsDialogOpen(false);
   };
 
@@ -152,23 +194,95 @@ export default function UsersPage() {
     console.log("Submitting Form:", newUser);
     fetcher.submit(newUser, { method: "POST" });
   };
+
+  const handleSubmitUpdate = (e: any) => {
+    e.preventDefault(); // Prevent default form submission
+    fetcher.submit(selectedUser, { method: "PUT" });
+  };
   useEffect(() => {
-    if (!fetcher.data || !fetcher.data.message) return; // Ensure fetcher.data exists
+    if (!fetcher.data || !fetcher.data.message) {
+      return console.log("No Fetcher Data Available");
+    } // Ensure fetcher.data exists
 
     console.log("Fetcher data message:", fetcher.data.message); // Debugging log
 
     if (fetcher.data.message.includes("User added successfully")) {
       console.log("this works!");
       toast.success(fetcher.data.message);
+      setNewUser({
+        firstname: "",
+        middlename: "",
+        lastname: "",
+        suffix: "",
+        email: "",
+        id_number: "",
+        college: "",
+        departmentId: "",
+        userType: "",
+        username: "",
+        password: "",
+      });
       setIsDialogOpen(false);
     } else if (fetcher.data.message.includes("User deleted successfully")) {
       toast.success(fetcher.data.message);
       setDeleteModal(false);
+    } else if (fetcher.data.message.includes("User updated successfully")) {
+      toast.success(fetcher.data.message);
+      setUpdateModal(false);
+      setSelectedUser({
+        id: "",
+        firstname: "",
+        middlename: "",
+        lastname: "",
+        suffix: "",
+        email: "",
+        id_number: "",
+        college: "",
+        departmentId: "",
+        userType: "",
+        username: "",
+        password: "",
+      });
     } else {
       toast.error("An error occurred!");
     }
   }, [fetcher.data]);
 
+  const handleUpdateModal = (data: any) => {
+    setUpdateModal(true);
+    setSelectedUser({
+      id: data._id,
+      firstname: data.firstname,
+      middlename: data.middlename,
+      lastname: data.lastname,
+      suffix: data.suffix,
+      email: data.email,
+      id_number: data.id_number,
+      college: data.college,
+      departmentId: data.departmentId._id,
+      userType: data.userType,
+      username: data.username,
+      password: data.password,
+    });
+  };
+
+  const handleUpdateModalClose = () => {
+    setUpdateModal(false);
+    setSelectedUser({
+      id: "",
+      firstname: "",
+      middlename: "",
+      lastname: "",
+      suffix: "",
+      email: "",
+      id_number: "",
+      college: "",
+      departmentId: "",
+      userType: "",
+      username: "",
+      password: "",
+    });
+  };
   return (
     <div className="space-y-4 mt-5">
       {/* Search & Add Invoice Button (Swapped Order) */}
@@ -180,7 +294,7 @@ export default function UsersPage() {
           />
           <Input
             type="text"
-            placeholder="Search invoices..."
+            placeholder="Search users..."
             value={searchQuery}
             onChange={handleSearch}
             className="w-full pl-10" // Add padding to prevent overlap
@@ -208,8 +322,20 @@ export default function UsersPage() {
           {currentUsers.length > 0 ? (
             currentUsers.map((val: any) => (
               <TableRow key={val._id}>
-                <TableCell className="w-1/4 text-left">
-                  {val.firstname} {val.middlename.split("")[0]} {val.lastname}
+                <TableCell className="col-span-2 text-left flex items-center gap-2">
+                  <Avatar>
+                    <AvatarImage
+                      src="https://github.com/shadcn.png"
+                      alt="@shadcn"
+                    />
+                    <AvatarFallback>CN</AvatarFallback>
+                  </Avatar>{" "}
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <span>{val.firstname}</span>
+                    <span>{val.middlename.split("")[0]}.</span>
+                    <span>{val.lastname} </span>
+                    <span>{val.suffix}</span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-center">{val.id_number}</TableCell>
                 <TableCell className="text-center">{val.email}</TableCell>
@@ -234,7 +360,7 @@ export default function UsersPage() {
                       >
                         Delete
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setUpdateModal(true)}>
+                      <DropdownMenuItem onClick={() => handleUpdateModal(val)}>
                         Update
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -244,8 +370,8 @@ export default function UsersPage() {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="text-center">
-                No vals found.
+              <TableCell colSpan={6} className="text-center">
+                No users found
               </TableCell>
             </TableRow>
           )}
@@ -288,7 +414,11 @@ export default function UsersPage() {
       {/* Add user Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
-          <fetcher.Form method="POST" onSubmit={handleSubmit}>
+          <fetcher.Form
+            className="flex flex-col gap-5"
+            method="POST"
+            onSubmit={handleSubmit}
+          >
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
             </DialogHeader>
@@ -314,6 +444,7 @@ export default function UsersPage() {
                       <div className="space-y-2">
                         <Label>Firstname</Label>
                         <Input
+                          required
                           defaultValue={newUser.firstname}
                           onChange={(e) =>
                             setNewUser({
@@ -328,6 +459,7 @@ export default function UsersPage() {
                       <div className="space-y-2">
                         <Label>Middlename</Label>
                         <Input
+                          required
                           defaultValue={newUser.middlename}
                           onChange={(e) =>
                             setNewUser({
@@ -345,6 +477,7 @@ export default function UsersPage() {
                       <div className="space-y-2">
                         <Label>Lastname</Label>
                         <Input
+                          required
                           defaultValue={newUser.lastname}
                           onChange={(e) =>
                             setNewUser({ ...newUser, lastname: e.target.value })
@@ -370,6 +503,7 @@ export default function UsersPage() {
                     <div className="space-y-2">
                       <Label>Email</Label>
                       <Input
+                        required
                         defaultValue={newUser.email}
                         onChange={(e) =>
                           setNewUser({ ...newUser, email: e.target.value })
@@ -386,7 +520,7 @@ export default function UsersPage() {
               <TabsContent value="Education">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Panel Members</CardTitle>
+                    <CardTitle>Education</CardTitle>
                     <CardDescription>
                       Enter details of panel members for thesis evaluation.
                     </CardDescription>
@@ -397,6 +531,7 @@ export default function UsersPage() {
                       <Label>Id Number</Label>
 
                       <Input
+                        required
                         name="id_number"
                         defaultValue={newUser.id_number}
                         onChange={(e) =>
@@ -410,6 +545,7 @@ export default function UsersPage() {
                       <Label>Department</Label>
 
                       <Select
+                        required
                         name="deparmentId"
                         defaultValue={newUser.departmentId}
                         onValueChange={(value) =>
@@ -436,6 +572,7 @@ export default function UsersPage() {
                       <Label>User Type</Label>
 
                       <Select
+                        required
                         name="userType"
                         defaultValue={newUser.userType}
                         onValueChange={(value) =>
@@ -474,6 +611,7 @@ export default function UsersPage() {
                       <Label>Username</Label>
 
                       <Input
+                        required
                         name="username"
                         defaultValue={newUser.username}
                         onChange={(e) =>
@@ -485,6 +623,7 @@ export default function UsersPage() {
                     <div className="space-y-2">
                       <Label>Password</Label>
                       <Input
+                        required
                         name="password"
                         defaultValue={newUser.password}
                         onChange={(e) =>
@@ -501,14 +640,38 @@ export default function UsersPage() {
 
             <DialogFooter>
               <Button
+                type="button"
                 className="cursor-pointer"
                 variant="ghost"
                 onClick={handleCloseDialog}
               >
                 Cancel
               </Button>
-              <Button type="submit" className="cursor-pointer">
-                {fetcher.state === "submitting" ? "Loading..." : "Add user"}
+              <Button
+                disabled={
+                  newUser.firstname == "" ||
+                  newUser.middlename == "" ||
+                  newUser.lastname == "" ||
+                  newUser.email == "" ||
+                  newUser.id_number == "" ||
+                  newUser.departmentId == "" ||
+                  newUser.userType == "" ||
+                  newUser.username == "" ||
+                  newUser.password == "" ||
+                  fetcher.state === "submitting"
+                }
+                type="submit"
+                className="cursor-pointer"
+              >
+                {fetcher.state === "submitting" ? (
+                  <>
+                    {" "}
+                    <Loader2 className="animate-spin" />
+                    Please wait
+                  </>
+                ) : (
+                  "Add user"
+                )}
               </Button>
             </DialogFooter>
           </fetcher.Form>
@@ -538,8 +701,20 @@ export default function UsersPage() {
               method="post"
               action={`/dashboard/users/${selectedUserId}/destroy`}
             >
-              <Button className="cursor-pointer" variant={"destructive"}>
-                {fetcher.state === "submitting" ? "Deleting..." : "Delete"}
+              <Button
+                disabled={fetcher.state === "submitting"}
+                className="cursor-pointer"
+                variant={"destructive"}
+              >
+                {fetcher.state === "submitting" ? (
+                  <>
+                    {" "}
+                    <Loader2 className="animate-spin" />
+                    Deleting
+                  </>
+                ) : (
+                  "Delete"
+                )}
               </Button>
             </fetcher.Form>
           </DialogFooter>
@@ -549,135 +724,278 @@ export default function UsersPage() {
       {/* update user data  */}
       <Dialog open={updateModal} onOpenChange={setUpdateModal}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Update User Data</DialogTitle>
-          </DialogHeader>
+          <fetcher.Form
+            className="flex flex-col gap-5"
+            method="POST"
+            onSubmit={handleSubmitUpdate}
+          >
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+            </DialogHeader>
 
-          <Tabs defaultValue="students" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="Details">Details</TabsTrigger>
-              <TabsTrigger value="Education">Education</TabsTrigger>
-              <TabsTrigger value="Credentials">Credentials</TabsTrigger>
-            </TabsList>
+            <Tabs defaultValue="students" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="Details">Details</TabsTrigger>
+                <TabsTrigger value="Education">Education</TabsTrigger>
+                <TabsTrigger value="Credentials">Credentials</TabsTrigger>
+              </TabsList>
 
-            {/* Details Tab */}
-            <TabsContent value="Details">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Student Details</CardTitle>
-                  <CardDescription>
-                    Enter correct student details.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <Input placeholder="Enter Name" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Address</Label>
-                    <Input placeholder="Subdivision | Barangay | City" />
-                  </div>
+              {/* Details Tab */}
+              <TabsContent value="Details">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Student Details</CardTitle>
+                    <CardDescription>
+                      Enter correct student details.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        required
+                        name="id"
+                        defaultValue={selectedUser.id}
+                        type="hidden"
+                      />
+                      <div className="space-y-2">
+                        <Label>Firstname</Label>
+                        <Input
+                          required
+                          defaultValue={selectedUser.firstname}
+                          onChange={(e) =>
+                            setSelectedUser({
+                              ...selectedUser,
+                              firstname: e.target.value,
+                            })
+                          }
+                          name="firstname"
+                          placeholder="Enter Firsname"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Middlename</Label>
+                        <Input
+                          required
+                          defaultValue={selectedUser.middlename}
+                          onChange={(e) =>
+                            setSelectedUser({
+                              ...selectedUser,
+                              middlename: e.target.value,
+                            })
+                          }
+                          name="middlename"
+                          placeholder="Enter Middlename"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input placeholder="juan@example.com" />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    <div className="grid grid-cols-[1fr_100px] gap-3">
+                      <div className="space-y-2">
+                        <Label>Lastname</Label>
+                        <Input
+                          required
+                          defaultValue={selectedUser.lastname}
+                          onChange={(e) =>
+                            setSelectedUser({
+                              ...selectedUser,
+                              lastname: e.target.value,
+                            })
+                          }
+                          name="lastname"
+                          placeholder="Enter Lastname"
+                        />
+                      </div>
 
-            {/* Education Tab */}
-            <TabsContent value="Education">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Panel Members</CardTitle>
-                  <CardDescription>
-                    Enter details of panel members for thesis evaluation.
-                  </CardDescription>
-                </CardHeader>
+                      <div className="space-y-2">
+                        <Label>Suffix</Label>
+                        <Input
+                          defaultValue={selectedUser.suffix}
+                          onChange={(e) =>
+                            setSelectedUser({
+                              ...selectedUser,
+                              suffix: e.target.value,
+                            })
+                          }
+                          name="suffix"
+                          placeholder="e.g Jr, Sr"
+                        />
+                      </div>
+                    </div>
 
-                <CardContent className="space-y-2">
-                  <div className="space-y-3">
-                    <Label>Id Number</Label>
-                    <Input placeholder="Enter Valid Id Number" />
-                  </div>
+                    <div className="space-y-2">
+                      <Label>Email</Label>
+                      <Input
+                        required
+                        defaultValue={selectedUser.email}
+                        onChange={(e) =>
+                          setSelectedUser({
+                            ...selectedUser,
+                            email: e.target.value,
+                          })
+                        }
+                        name="email"
+                        placeholder="sample@gmail.com"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-                  <div className="space-y-3 w-full">
-                    <Label>College</Label>
-                    <Select>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a College" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Fruits</SelectLabel>
-                          <SelectItem value="apple">Apple</SelectItem>
-                          <SelectItem value="banana">Banana</SelectItem>
-                          <SelectItem value="blueberry">Blueberry</SelectItem>
-                          <SelectItem value="grapes">Grapes</SelectItem>
-                          <SelectItem value="pineapple">Pineapple</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              {/* Education Tab */}
+              <TabsContent value="Education">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Panel Members</CardTitle>
+                    <CardDescription>
+                      Enter details of panel members for thesis evaluation.
+                    </CardDescription>
+                  </CardHeader>
 
-                  <div className="space-y-3 w-full">
-                    <Label>Department</Label>
+                  <CardContent className="space-y-2">
+                    <div className="space-y-3">
+                      <Label>Id Number</Label>
 
-                    <Select>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a department" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Fruits</SelectLabel>
-                          <SelectItem value="apple">Apple</SelectItem>
-                          <SelectItem value="banana">Banana</SelectItem>
-                          <SelectItem value="blueberry">Blueberry</SelectItem>
-                          <SelectItem value="grapes">Grapes</SelectItem>
-                          <SelectItem value="pineapple">Pineapple</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                      <Input
+                        required
+                        name="id_number"
+                        defaultValue={selectedUser.id_number}
+                        onChange={(e) =>
+                          setSelectedUser({
+                            ...selectedUser,
+                            id_number: e.target.value,
+                          })
+                        }
+                        placeholder="Enter Valid Id Number"
+                      />
+                    </div>
 
-            {/* Credentials Tab */}
-            <TabsContent value="Credentials">
-              <Card>
-                <CardHeader>
-                  <CardTitle>User Credentials</CardTitle>
-                  <CardDescription>
-                    Enter user credentials for user login.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-2">
-                    <Label>Username</Label>
-                    <Input placeholder="Enter Username" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Password</Label>
-                    <Input placeholder="Enter Password" type="password" />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+                    <div className="space-y-3 w-full">
+                      <Label>Department</Label>
 
-          <DialogFooter>
-            <Button
-              className="cursor-pointer"
-              variant="ghost"
-              onClick={() => setUpdateModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button className="cursor-pointer">Update</Button>
-          </DialogFooter>
+                      <Select
+                        required
+                        name="deparmentId"
+                        defaultValue={selectedUser.departmentId}
+                        onValueChange={(value) =>
+                          setSelectedUser({
+                            ...selectedUser,
+                            departmentId: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select a department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Departments</SelectLabel>
+                            {departments.map((dept: any) => (
+                              <SelectItem key={dept._id} value={dept._id}>
+                                {dept.acronym}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-3 w-full">
+                      <Label>User Type</Label>
+
+                      <Select
+                        required
+                        name="userType"
+                        defaultValue={selectedUser.userType}
+                        onValueChange={(value) =>
+                          setSelectedUser({ ...selectedUser, userType: value })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select User Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectItem value="student">Student</SelectItem>
+                            <SelectItem value="chairperson">
+                              Chairperson
+                            </SelectItem>
+                            <SelectItem value="faculty">Faculty</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Credentials Tab */}
+              <TabsContent value="Credentials">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>User Credentials</CardTitle>
+                    <CardDescription>
+                      Enter user credentials for user login.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="space-y-2">
+                      <Label>Username</Label>
+
+                      <Input
+                        required
+                        name="username"
+                        defaultValue={selectedUser.username}
+                        onChange={(e) =>
+                          setSelectedUser({
+                            ...selectedUser,
+                            username: e.target.value,
+                          })
+                        }
+                        placeholder="Enter Username"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                className="cursor-pointer"
+                variant="ghost"
+                onClick={handleUpdateModalClose}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={
+                  selectedUser.firstname == "" ||
+                  selectedUser.middlename == "" ||
+                  selectedUser.lastname == "" ||
+                  selectedUser.email == "" ||
+                  selectedUser.id_number == "" ||
+                  selectedUser.departmentId == "" ||
+                  selectedUser.userType == "" ||
+                  selectedUser.username == "" ||
+                  selectedUser.password == "" ||
+                  fetcher.state === "submitting"
+                }
+                type="submit"
+                className="cursor-pointer"
+              >
+                {fetcher.state === "submitting" ? (
+                  <>
+                    {" "}
+                    <Loader2 className="animate-spin" />
+                    Please wait
+                  </>
+                ) : (
+                  "Update user"
+                )}
+              </Button>
+            </DialogFooter>
+          </fetcher.Form>
         </DialogContent>
       </Dialog>
     </div>

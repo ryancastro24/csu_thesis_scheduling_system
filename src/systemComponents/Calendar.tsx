@@ -3,9 +3,14 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Clock } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,35 +20,71 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+// Function to format 24-hour time to 12-hour format without space in AM/PM
+const formatTimeTo12Hour = (time: string) => {
+  if (!time) return "";
+  const [hours, minutes] = time.split(":").map(Number);
+  const period = hours >= 12 ? "PM" : "AM";
+  const formattedHours = hours % 12 || 12;
+  return `${formattedHours}:${minutes.toString().padStart(2, "0")}${period}`;
+};
+
+// Function to convert 12-hour format back to 24-hour format
+const convertTo24HourFormat = (time: string) => {
+  if (!time) return "";
+  const match = time.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
+  if (!match) return time; // Return original if format is incorrect
+
+  let [_, hours, minutes, period] = match;
+  let formattedHours =
+    period === "PM" && hours !== "12" ? Number(hours) + 12 : Number(hours);
+  if (period === "AM" && hours === "12") formattedHours = 0;
+
+  return `${formattedHours.toString().padStart(2, "0")}:${minutes}`;
+};
+
 export default function Calendar() {
   const [events, setEvents] = useState([
     {
-      id: "1",
-      title: "Sangka 2025",
-      date: "2025-02-22",
+      _id: "67d597f97d06867afaec240d",
+      date: "2025-03-25",
+      time: "9:00AM - 11:00AM",
+      eventType: "Class",
+      userId: "67d29ce1990acc26a58cb53a",
+      createdAt: "2025-03-15T15:08:41.828Z",
+      updatedAt: "2025-03-15T15:08:41.828Z",
     },
   ]);
+
   const [openModal, setOpenModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [eventTitle, setEventTitle] = useState("");
+  const [eventType, setEventType] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
   const [deleteModal, setDeleteModal] = useState(false);
-  const [eventToDelete, setEventToDelete] = useState<string | null>(null); // Store event ID for deletion
+  const [eventToDelete, setEventToDelete] = useState<string | null>(null);
 
   // Handle date click to open modal
   const handleDateClick = (info: any) => {
     setSelectedDate(info.dateStr);
-    setEventTitle("");
+    setEventType("");
+    setStartTime("");
+    setEndTime("");
     setOpenModal(true);
   };
 
   // Add event to state
   const handleAddEvent = () => {
-    if (!eventTitle.trim() || !selectedDate) return;
+    if (!eventType.trim() || !selectedDate || !startTime || !endTime) return;
 
     const newEvent = {
-      id: String(events.length + 1),
-      title: eventTitle,
+      _id: String(Date.now()),
       date: selectedDate,
+      time: `${startTime} - ${endTime}`,
+      eventType,
+      userId: "67d29ce1990acc26a58cb53a",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     setEvents([...events, newEvent]);
@@ -59,7 +100,7 @@ export default function Calendar() {
   // Confirm deletion and remove event
   const handleConfirmDelete = () => {
     if (eventToDelete) {
-      setEvents(events.filter((event) => event.id !== eventToDelete));
+      setEvents(events.filter((event) => event._id !== eventToDelete));
     }
     setDeleteModal(false);
   };
@@ -69,9 +110,13 @@ export default function Calendar() {
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
-        events={events}
+        events={events.map((event) => ({
+          id: event._id,
+          title: `${event.eventType} (${event.time})`,
+          date: event.date,
+        }))}
         dateClick={handleDateClick}
-        eventClick={handleEventClick} // Click event to open delete modal
+        eventClick={handleEventClick}
         height="100%"
       />
 
@@ -81,31 +126,79 @@ export default function Calendar() {
           <DialogHeader>
             <DialogTitle>Add Event</DialogTitle>
             <DialogDescription>
-              Enter the event title for {selectedDate}.
+              Enter details for the event on {selectedDate}.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={eventTitle}
-                onChange={(e) => setEventTitle(e.target.value)}
-                placeholder="Enter event title"
+              <Label htmlFor="eventType">Event Type</Label>
+              <input
+                id="eventType"
+                value={eventType}
+                onChange={(e) => setEventType(e.target.value)}
+                placeholder="Enter event type (e.g., Class, Meeting)"
+                className="border p-2 rounded"
               />
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Start Time Picker */}
+              <div className="flex flex-col gap-2">
+                <Label>Start Time</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                    >
+                      {startTime ? startTime : "Select start time"}
+                      <Clock className="ml-2 h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-4 space-y-4">
+                    <Input
+                      type="time"
+                      value={convertTo24HourFormat(startTime)}
+                      onChange={(e) =>
+                        setStartTime(formatTimeTo12Hour(e.target.value))
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* End Time Picker */}
+              <div className="flex flex-col gap-2">
+                <Label>End Time</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                    >
+                      {endTime ? endTime : "Select end time"}
+                      <Clock className="ml-2 h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-4 space-y-4">
+                    <Input
+                      type="time"
+                      value={convertTo24HourFormat(endTime)}
+                      onChange={(e) =>
+                        setEndTime(formatTimeTo12Hour(e.target.value))
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
           </div>
+
           <DialogFooter>
-            <Button
-              className="cursor-pointer"
-              variant="ghost"
-              onClick={() => setOpenModal(false)}
-            >
+            <Button variant="ghost" onClick={() => setOpenModal(false)}>
               Cancel
             </Button>
-            <Button className="cursor-pointer" onClick={handleAddEvent}>
-              Add Event
-            </Button>
+            <Button onClick={handleAddEvent}>Add Event</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -120,18 +213,10 @@ export default function Calendar() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button
-              className="cursor-pointer"
-              variant="ghost"
-              onClick={() => setDeleteModal(false)}
-            >
+            <Button variant="ghost" onClick={() => setDeleteModal(false)}>
               Cancel
             </Button>
-            <Button
-              className="cursor-pointer"
-              variant={"destructive"}
-              onClick={handleConfirmDelete}
-            >
+            <Button variant="destructive" onClick={handleConfirmDelete}>
               Confirm
             </Button>
           </DialogFooter>
