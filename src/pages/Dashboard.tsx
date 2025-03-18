@@ -7,12 +7,19 @@ import { Button } from "@/components/ui/button";
 import { IoIosSchool } from "react-icons/io";
 import { AiFillSchedule } from "react-icons/ai";
 import { LuBellRing } from "react-icons/lu";
-import { useLocation, useNavigate, Outlet } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  Outlet,
+  useLoaderData,
+  useNavigation,
+} from "react-router-dom";
 import { FaUserEdit } from "react-icons/fa";
 import { RiSettings3Fill } from "react-icons/ri";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-
+import { isAuthenticated } from "@/utils/auth";
+import { redirect } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +27,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import Loader from "@/systemComponents/Loader";
+export const loader = async () => {
+  if (!isAuthenticated()) {
+    return redirect("/"); // Redirect to login if not authenticated
+  }
+
+  const user = localStorage.getItem("user");
+
+  const userData: any = JSON.parse(user as any);
+
+  return { userData }; // Proceed if authenticated
+};
 const Dashboard = () => {
+  const navigation = useNavigation();
+  const { userData } = useLoaderData();
   const [openNotification, setOpenNotification] = useState(false);
   const location = useLocation();
   console.log(location.pathname);
@@ -39,8 +60,8 @@ const Dashboard = () => {
           </Avatar>
 
           <div>
-            <h1 className="text-lg ">Justine Ella</h1>
-            <h2 className="text-xs  ">211-01234</h2>
+            <h1 className="text-lg ">{userData.firstname}</h1>
+            <h2 className="text-xs  ">{userData.id_number}</h2>
           </div>
         </div>
         <Separator />
@@ -49,62 +70,72 @@ const Dashboard = () => {
             <h2 className="text-sm mt-4 py-2 px-3 rounded dark:bg-[#303030] bg-slate-200">
               Navigation
             </h2>
-            <li
-              onClick={() => navigate("/dashboard/users")}
-              className={`hover:bg-orange-500 ${
-                location.pathname === "/dashboard/users"
-                  ? "bg-orange-500  text-white"
-                  : ""
-              } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
-            >
-              <span className="text-lg">
-                <PiUsersFill />{" "}
-              </span>{" "}
-              Active users
-            </li>
 
-            <li
-              onClick={() => navigate("/dashboard/calendar")}
-              className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
-                location.pathname === "/dashboard/calendar"
-                  ? "bg-orange-500 text-white"
-                  : ""
-              } `}
-            >
-              <span className="text-md">
-                {" "}
-                <FaCalendar />{" "}
-              </span>{" "}
-              My calendar
-            </li>
+            {userData.userType === "admin" && (
+              <li
+                onClick={() => navigate("/dashboard/users")}
+                className={`hover:bg-orange-500 ${
+                  location.pathname === "/dashboard/users"
+                    ? "bg-orange-500 text-white"
+                    : ""
+                } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
+              >
+                <span className="text-lg">
+                  <PiUsersFill />
+                </span>
+                Active users
+              </li>
+            )}
 
-            <li
-              onClick={() => navigate("/dashboard/students")}
-              className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
-                location.pathname === "/dashboard/students"
-                  ? "bg-orange-500 text-white"
-                  : ""
-              }`}
-            >
-              <span className="text-lg">
-                <IoIosSchool />
-              </span>
-              My Advisees
-            </li>
+            {["admin", "chairperson", "faculty"].includes(
+              userData.userType
+            ) && (
+              <li
+                onClick={() => navigate("/dashboard/calendar")}
+                className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
+                  location.pathname === "/dashboard/calendar"
+                    ? "bg-orange-500 text-white"
+                    : ""
+                }`}
+              >
+                <span className="text-md">
+                  <FaCalendar />
+                </span>
+                My calendar
+              </li>
+            )}
 
-            <li
-              onClick={() => navigate("/dashboard/schedules")}
-              className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
-                location.pathname === "/dashboard/schedules"
-                  ? "bg-orange-500 text-white"
-                  : ""
-              } `}
-            >
-              <span className="text-lg">
-                <AiFillSchedule />
-              </span>{" "}
-              Schedules
-            </li>
+            {userData.userType === "faculty" && (
+              <li
+                onClick={() => navigate("/dashboard/students")}
+                className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
+                  location.pathname === "/dashboard/students"
+                    ? "bg-orange-500 text-white"
+                    : ""
+                }`}
+              >
+                <span className="text-lg">
+                  <IoIosSchool />
+                </span>
+                My Advisees
+              </li>
+            )}
+
+            {["chairperson", "admin"].includes(userData.userType) && (
+              <li
+                onClick={() => navigate("/dashboard/schedules")}
+                className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
+                  location.pathname === "/dashboard/schedules"
+                    ? "bg-orange-500 text-white"
+                    : ""
+                }`}
+              >
+                <span className="text-lg">
+                  <AiFillSchedule />
+                </span>
+                Schedules
+              </li>
+            )}
 
             <h2 className="text-sm mt-4 py-2 px-3 rounded dark:bg-[#303030] bg-slate-200">
               User Profile
@@ -214,9 +245,7 @@ const Dashboard = () => {
             </DialogContent>
           </Dialog>
 
-          <div>
-            <Outlet />
-          </div>
+          <div>{navigation.state === "loading" ? <Loader /> : <Outlet />}</div>
         </div>
       </div>
     </div>

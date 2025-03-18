@@ -109,6 +109,7 @@ export default function UsersPage() {
   const [deleteModal, setDeleteModal] = useState(false);
   const [updateModal, setUpdateModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedUsertype, setSelectedUsertype] = useState("");
   const [selectedUser, setSelectedUser] = useState({
     id: "",
     firstname: "",
@@ -144,16 +145,21 @@ export default function UsersPage() {
     setCurrentPage(1);
   };
 
-  const filteredUsers = users.filter(
-    (user: any) =>
-      user.firstname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.middlename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.lastname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.id_number
-        .toString()
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) // Ensure idnumber is a string
-  );
+  const filteredUsers = users.filter((user: any) => {
+    const fullName = `${user.firstname} ${user.middlename ?? ""} ${
+      user.lastname
+    }`.toLowerCase();
+    const idNumber = user.id_number?.toString().toLowerCase() || "";
+    const query = searchQuery.toLowerCase();
+
+    const matchesSearch = fullName.includes(query) || idNumber.includes(query);
+
+    const matchesUserType = selectedUsertype
+      ? user.userType === selectedUsertype
+      : true;
+
+    return matchesSearch && matchesUserType;
+  });
 
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
   const currentUsers = filteredUsers.slice(
@@ -287,18 +293,59 @@ export default function UsersPage() {
     <div className="space-y-4 mt-5">
       {/* Search & Add Invoice Button (Swapped Order) */}
       <div className="flex justify-between items-center">
-        <div className="relative w-64">
-          <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-            size={18}
-          />
-          <Input
-            type="text"
-            placeholder="Search users..."
-            value={searchQuery}
-            onChange={handleSearch}
-            className="w-full pl-10" // Add padding to prevent overlap
-          />
+        <div className="flex gap-5 items-center">
+          <div className="relative w-64">
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+              size={18}
+            />
+            <Input
+              type="text"
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={handleSearch}
+              className="w-full pl-10" // Add padding to prevent overlap
+            />
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Button
+              className="cursor-pointer"
+              variant={selectedUsertype === "student" ? "default" : "secondary"}
+              onClick={() =>
+                setSelectedUsertype((prev) =>
+                  prev === "student" ? "" : "student"
+                )
+              }
+            >
+              Students
+            </Button>
+            <Button
+              className="cursor-pointer"
+              variant={selectedUsertype === "faculty" ? "default" : "secondary"}
+              onClick={() =>
+                setSelectedUsertype((prev) =>
+                  prev === "faculty" ? "" : "faculty"
+                )
+              }
+            >
+              Faculties
+            </Button>
+
+            <Button
+              className="cursor-pointer"
+              variant={
+                selectedUsertype === "chairperson" ? "default" : "secondary"
+              }
+              onClick={() =>
+                setSelectedUsertype((prev) =>
+                  prev === "chairperson" ? "" : "chairperson"
+                )
+              }
+            >
+              Chairpersons
+            </Button>
+          </div>
         </div>
         <Button className="cursor-pointer" onClick={handleOpenDialog}>
           Add User
@@ -423,7 +470,7 @@ export default function UsersPage() {
               <DialogTitle>Add New User</DialogTitle>
             </DialogHeader>
 
-            <Tabs defaultValue="students" className="w-full">
+            <Tabs defaultValue="Details" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="Details">Details</TabsTrigger>
                 <TabsTrigger value="Education">Education</TabsTrigger>
@@ -733,7 +780,7 @@ export default function UsersPage() {
               <DialogTitle>Add New User</DialogTitle>
             </DialogHeader>
 
-            <Tabs defaultValue="students" className="w-full">
+            <Tabs defaultValue="Details" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="Details">Details</TabsTrigger>
                 <TabsTrigger value="Education">Education</TabsTrigger>

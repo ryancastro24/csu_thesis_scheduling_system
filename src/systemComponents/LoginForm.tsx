@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -7,13 +8,51 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Form,
+  ActionFunction,
+  useNavigation,
+  useActionData,
+} from "react-router-dom";
+import { login } from "@/backend_api/auth";
+
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData();
+  const data: Record<string, FormDataEntryValue> = Object.fromEntries(
+    formData.entries()
+  );
+
+  const userData = await login(data);
+
+  return userData;
+};
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const [loginData, setLoginData] = useState({
+    username: "",
+    password: "",
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const navigation = useNavigation();
+  const actionData = useActionData();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (actionData?.error) {
+      setErrorMessage(actionData.error);
+      const timer = setTimeout(() => {
+        setErrorMessage(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [actionData]);
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
@@ -24,18 +63,23 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form>
+          <Form method="post">
             <div className="flex flex-col gap-6">
               <div className="grid gap-2">
-                <Label htmlFor="email">Username</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
+                  value={loginData.username}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, username: e.target.value })
+                  }
                   id="username"
-                  type="username"
+                  type="text"
                   placeholder="m@example.com"
                   required
+                  name="username"
                 />
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-2 relative">
                 <div className="flex items-center">
                   <Label htmlFor="password">Password</Label>
                   <a
@@ -45,19 +89,53 @@ export function LoginForm({
                     Forgot your password?
                   </a>
                 </div>
-                <Input id="password" type="password" required />
+                <div className="relative">
+                  <Input
+                    value={loginData.password}
+                    onChange={(e) =>
+                      setLoginData({ ...loginData, password: e.target.value })
+                    }
+                    name="password"
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    className="pr-10" // Add padding to prevent text overlap with the icon
+                  />
+                  {/* Show/Hide Password Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-2 flex items-center text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
-              <Button type="submit" className="w-full">
-                Login
+              <Button
+                disabled={
+                  loginData.username === "" ||
+                  loginData.password === "" ||
+                  navigation.state === "submitting"
+                }
+                type="submit"
+                className="w-full"
+              >
+                {navigation.state === "submitting" ? (
+                  <>
+                    <Loader2 className="animate-spin" />
+                    Please wait
+                  </>
+                ) : (
+                  "Login"
+                )}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
-              <a href="#" className="underline underline-offset-4">
-                Contact Admin
-              </a>
+            <div className="mt-4 text-sm">
+              {errorMessage && (
+                <span className="text-red-500">{errorMessage}</span>
+              )}
             </div>
-          </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

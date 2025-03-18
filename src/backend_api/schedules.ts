@@ -12,3 +12,27 @@ export async function generateSchedule(data: any) {
     throw error; // Rethrow the error for handling
   }
 }
+
+export async function getUserSchedules(id: string) {
+  try {
+    const response = await axios.get(
+      `http://localhost:5000/api/schedules/${id}`
+    );
+    return response.data; // Return the retrieved data
+  } catch (error) {
+    console.error("Error fetching colleges:", error);
+    throw error; // Rethrow the error for handling
+  }
+}
+
+export async function deleteUserSchedule(id: string) {
+  try {
+    const response = await axios.delete(
+      `http://localhost:5000/api/schedules/${id}`
+    );
+    return response.data; // Return the retrieved data
+  } catch (error) {
+    console.error("Error fetching colleges:", error);
+    throw error; // Rethrow the error for handling
+  }
+}

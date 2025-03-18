@@ -4,6 +4,13 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import {
+  Form,
+  useLoaderData,
+  ActionFunction,
+  useNavigation,
+} from "react-router-dom";
 import {
   Popover,
   PopoverTrigger,
@@ -20,6 +27,18 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+import { getUserSchedules } from "@/backend_api/schedules";
+
+import { addNewSchedule } from "@/backend_api/calendar";
+export const loader = async () => {
+  const user = localStorage.getItem("user");
+
+  const userData: any = JSON.parse(user as any);
+
+  const schedules = await getUserSchedules(userData.id);
+
+  return { userData, schedules }; // Proceed if authenticated
+};
 // Function to format 24-hour time to 12-hour format without space in AM/PM
 const formatTimeTo12Hour = (time: string) => {
   if (!time) return "";
@@ -43,7 +62,24 @@ const convertTo24HourFormat = (time: string) => {
   return `${formattedHours.toString().padStart(2, "0")}:${minutes}`;
 };
 
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData();
+  const data: Record<string, FormDataEntryValue> = Object.fromEntries(
+    formData.entries()
+  );
+
+  const newSchedule = await addNewSchedule(data);
+
+  console.log(newSchedule);
+
+  return newSchedule;
+};
 export default function Calendar() {
+  const { userData, schedules } = useLoaderData();
+
+  console.log(schedules);
+  const navigation = useNavigation();
+
   const [events, setEvents] = useState([
     {
       _id: "67d597f97d06867afaec240d",
@@ -88,7 +124,6 @@ export default function Calendar() {
     };
 
     setEvents([...events, newEvent]);
-    setOpenModal(false);
   };
 
   // Open delete modal and store event ID
@@ -97,23 +132,15 @@ export default function Calendar() {
     setDeleteModal(true);
   };
 
-  // Confirm deletion and remove event
-  const handleConfirmDelete = () => {
-    if (eventToDelete) {
-      setEvents(events.filter((event) => event._id !== eventToDelete));
-    }
-    setDeleteModal(false);
-  };
-
   return (
     <div className="w-full h-screen">
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
-        events={events.map((event) => ({
-          id: event._id,
-          title: `${event.eventType} (${event.time})`,
-          date: event.date,
+        events={schedules.map((schedule: any) => ({
+          id: schedule._id,
+          title: `${schedule.eventType} (${schedule.time})`,
+          date: schedule.date,
         }))}
         dateClick={handleDateClick}
         eventClick={handleEventClick}
@@ -198,7 +225,32 @@ export default function Calendar() {
             <Button variant="ghost" onClick={() => setOpenModal(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddEvent}>Add Event</Button>
+
+            <Form method="POST">
+              <Input name="date" value={selectedDate || ""} type="hidden" />
+              <Input name="eventType" value={eventType} type="hidden" />
+              <Input
+                name="time"
+                value={`${startTime} - ${endTime}`}
+                type="hidden"
+              />
+              <Input name="userId" value={userData.id} type="hidden" />
+              <Button
+                disabled={navigation.state === "submitting"}
+                className="cursor-pointer"
+                onClick={handleAddEvent}
+              >
+                {navigation.state === "submitting" ? (
+                  <>
+                    {" "}
+                    <Loader2 className="animate-spin" />
+                    Please wait
+                  </>
+                ) : (
+                  "Add schedule"
+                )}
+              </Button>
+            </Form>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -216,9 +268,28 @@ export default function Calendar() {
             <Button variant="ghost" onClick={() => setDeleteModal(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleConfirmDelete}>
-              Confirm
-            </Button>
+
+            <Form
+              method="POST"
+              action={`/dashboard/calendar/${eventToDelete}/destroy`}
+            >
+              <Button
+                className="cursor-pointer"
+                disabled={navigation.state === "submitting"}
+                type="submit"
+                variant="destructive"
+              >
+                {navigation.state === "submitting" ? (
+                  <>
+                    {" "}
+                    <Loader2 className="animate-spin" />
+                    Please wait
+                  </>
+                ) : (
+                  "Confirm"
+                )}
+              </Button>
+            </Form>
           </DialogFooter>
         </DialogContent>
       </Dialog>

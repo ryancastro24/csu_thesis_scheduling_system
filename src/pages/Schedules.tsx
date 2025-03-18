@@ -1,8 +1,13 @@
 import { useState, useEffect } from "react";
-import { Form, ActionFunction, useActionData } from "react-router-dom";
+import {
+  Form,
+  ActionFunction,
+  useActionData,
+  useNavigation,
+} from "react-router-dom";
 import { format } from "date-fns";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
-
+import { Loader2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -103,7 +108,7 @@ const ITEMS_PER_PAGE = 6;
 const Schedules = () => {
   const { students, faculty, thesisSchedules } = useLoaderData();
   const actionData = useActionData();
-
+  const navigation = useNavigation();
   const [schedule, setSchedule] = useState("");
   const [, setOpenThesisModal] = useState(false);
 
@@ -419,13 +424,386 @@ const Schedules = () => {
                 </DialogContent>
               </Dialog>
 
-              <Button
-                className="cursor-pointer "
-                size={"icon"}
-                variant={"outline"}
-              >
-                <AiFillEdit />
-              </Button>
+              {/* update thesis model */}
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    className="cursor-pointer "
+                    size={"icon"}
+                    variant={"outline"}
+                  >
+                    <AiFillEdit />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Update Thesis Schedule</DialogTitle>
+                  </DialogHeader>
+
+                  <Tabs defaultValue="students" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="students">Students</TabsTrigger>
+                      <TabsTrigger value="panels">Panels</TabsTrigger>
+                      <TabsTrigger value="schedule">Schedule</TabsTrigger>
+                    </TabsList>
+
+                    {/* Students Tab */}
+                    <TabsContent value="students">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Student Details</CardTitle>
+                          <CardDescription>
+                            Select student members of the thesis.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <SearchableDropdown
+                            label="Student 1"
+                            options={students}
+                            value={selectedStudent1} // Pass the entire object
+                            onValueChange={setSelectedStudent1} // Ensure it updates correctly
+                          />
+
+                          <SearchableDropdown
+                            label="Student 2"
+                            options={students}
+                            value={selectedStudent2} // Pass the entire object
+                            onValueChange={setSelectedStudent2} // Ensure it updates correctly
+                          />
+                          <SearchableDropdown
+                            label="Student 3"
+                            value={selectedStudent3} // Pass the entire object
+                            onValueChange={setSelectedStudent3} // Ensure it updates correctly
+                            options={students}
+                          />
+
+                          <SearchableDropdown
+                            label="Adviser"
+                            value={selectedFaculty} // Pass the entire object
+                            onValueChange={setSelectedFaculty} // Ensure it updates correctly
+                            options={faculty}
+                          />
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    {/* Panels Tab */}
+                    <TabsContent value="panels">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Panel Members</CardTitle>
+                          <CardDescription>
+                            Enter details of panel members for thesis
+                            evaluation.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <SearchableDropdown
+                            label="Panel 1"
+                            value={selectedFaculty1} // Pass the entire object
+                            onValueChange={setSelectedFaculty1} // Ensure it updates correctly
+                            options={faculty}
+                          />
+
+                          <SearchableDropdown
+                            label="Panel 2"
+                            value={selectedFaculty2} // Pass the entire object
+                            onValueChange={setSelectedFaculty2} // Ensure it updates correctly
+                            options={faculty}
+                          />
+
+                          <SearchableDropdown
+                            label="Panel 3"
+                            value={selectedFaculty3} // Pass the entire object
+                            onValueChange={setSelectedFaculty3} // Ensure it updates correctly
+                            options={faculty}
+                          />
+
+                          <SearchableDropdown
+                            label="Oral Adviser"
+                            value={selectedFaculty4} // Pass the entire object
+                            onValueChange={setSelectedFaculty4} // Ensure it updates correctly
+                            options={faculty}
+                          />
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+
+                    {/* Schedule Tab */}
+                    <TabsContent value="schedule">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Thesis Defense Schedule</CardTitle>
+                          <CardDescription>
+                            Select venue and generate date for the thesis
+                            defense.
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="space-y-1">
+                            <Label>Thesis Title</Label>
+                            <Input
+                              value={thesisTitle}
+                              onChange={(e) => setThesisTitle(e.target.value)}
+                              type="text"
+                              placeholder="Enter thesis title"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label>Venue</Label>
+                            <Select value={venue} onValueChange={setVenue}>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select Venue" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {venueOptions.map((val) => (
+                                  <SelectItem key={val.label} value={val.value}>
+                                    {val.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label>Type</Label>
+                            <Select
+                              value={thesisType}
+                              onValueChange={setThesisType}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select Thesis Type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value={"proposal"}>
+                                  Proposal
+                                </SelectItem>
+
+                                <SelectItem value={"final"}>Final</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label>Schedule Date</Label>
+
+                            <DateTimeRangePicker
+                              dateRange={dateRange}
+                              setDateRange={setDateRange}
+                              startTime={startTime}
+                              setStartTime={setStartTime}
+                              endTime={endTime}
+                              setEndTime={setEndTime}
+                            />
+
+                            <Form method="POST">
+                              <Input
+                                value={formattedDateRange}
+                                type="hidden"
+                                name="dateRange"
+                              />
+
+                              <Input
+                                value={startTime}
+                                type="hidden"
+                                name="startTime"
+                              />
+
+                              <Input
+                                value={endTime}
+                                type="hidden"
+                                name="endTime"
+                              />
+                              <Input
+                                value={selectedFaculty2?.id}
+                                type="hidden"
+                                name="panel2"
+                              />
+                              <Input
+                                value={selectedFaculty1?.id}
+                                type="hidden"
+                                name="panel1"
+                              />
+                              <Input
+                                value={selectedFaculty2?.id}
+                                type="hidden"
+                                name="panel2"
+                              />
+                              <Input
+                                value={selectedFaculty3?.id}
+                                type="hidden"
+                                name="panel3"
+                              />
+                              <Input
+                                value={"67d2918b990acc26a58cb4be"}
+                                type="hidden"
+                                name="chairperson"
+                              />
+                              <Input
+                                value={"67d29ce1990acc26a58cb53a"}
+                                type="hidden"
+                                name="adminId"
+                              />
+
+                              <Input
+                                value={selectedFaculty4?.id}
+                                type="hidden"
+                                name="panel4"
+                              />
+                              <Button
+                                type="submit"
+                                name="submit"
+                                value={"generateSchedule"}
+                                disabled={
+                                  selectedFaculty1 == null ||
+                                  selectedFaculty2 == null ||
+                                  selectedFaculty3 == null ||
+                                  selectedFaculty4 == null ||
+                                  startTime == "" ||
+                                  endTime == "" ||
+                                  dateRange.from == undefined ||
+                                  dateRange.to == undefined
+                                }
+                                className="w-full cursor-pointer"
+                              >
+                                Generate Date
+                              </Button>
+                            </Form>
+                            <span className="text-sm text-red-500">
+                              {selectedFaculty1 == null ||
+                              selectedFaculty2 == null ||
+                              selectedFaculty3 == null ||
+                              selectedFaculty4 == null ||
+                              startTime == "" ||
+                              endTime == "" ||
+                              dateRange.from == undefined ||
+                              dateRange.to == undefined
+                                ? "Fill all panels field to generate"
+                                : ""}
+                            </span>
+
+                            <span
+                              className={`text-sm ${
+                                actionData?.message.startsWith("Available Date")
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              } `}
+                            >
+                              {actionData?.message.startsWith(
+                                "Available Date"
+                              ) &&
+                                `${actionData?.message} (${startTime} - ${endTime})`}
+                              {!actionData?.message.startsWith(
+                                "Available Date"
+                              ) && actionData?.message}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
+
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button type="button" variant="secondary">
+                        Cancel
+                      </Button>
+                    </DialogClose>
+
+                    <Form method="POST">
+                      <Input
+                        value={selectedStudent1?.id}
+                        type="hidden"
+                        name="student1"
+                      />
+                      <Input
+                        value={selectedStudent2?.id}
+                        type="hidden"
+                        name="student2"
+                      />
+                      <Input
+                        value={selectedStudent3?.id}
+                        type="hidden"
+                        name="student3"
+                      />
+                      <Input
+                        value={selectedFaculty?.id}
+                        type="hidden"
+                        name="adviser"
+                      />
+                      <Input
+                        value={`${startTime} - ${endTime}`}
+                        type="hidden"
+                        name="time"
+                      />
+
+                      <Input value={thesisType} type="hidden" name="type" />
+
+                      <Input
+                        value={selectedFaculty1?.id}
+                        type="hidden"
+                        name="panel1"
+                      />
+                      <Input
+                        value={selectedFaculty2?.id}
+                        type="hidden"
+                        name="panel2"
+                      />
+                      <Input
+                        value={selectedFaculty3?.id}
+                        type="hidden"
+                        name="panel3"
+                      />
+
+                      <Input
+                        value={selectedFaculty4?.id}
+                        type="hidden"
+                        name="panel4"
+                      />
+                      <Input
+                        value={thesisTitle}
+                        type="hidden"
+                        name="thesisTitle"
+                      />
+                      <Input value={venue} type="hidden" name="venue" />
+                      <Input value={schedule} type="hidden" name="date" />
+                      <Button
+                        name="submit"
+                        value={"submitSchedule"}
+                        disabled={
+                          selectedStudent1 == null ||
+                          selectedStudent2 == null ||
+                          selectedStudent3 == null ||
+                          selectedFaculty == null ||
+                          selectedFaculty1 == null ||
+                          selectedFaculty2 == null ||
+                          selectedFaculty3 == null ||
+                          selectedFaculty4 == null ||
+                          thesisTitle == "" ||
+                          venue == "" ||
+                          startTime == "" ||
+                          endTime == "" ||
+                          dateRange.from == undefined ||
+                          dateRange.to == undefined
+                        }
+                        onClick={handleDialogSubmit}
+                      >
+                        {navigation.state === "submitting" ? (
+                          <>
+                            {" "}
+                            <Loader2 className="animate-spin" />
+                            Please wait
+                          </>
+                        ) : (
+                          "Login"
+                        )}
+                      </Button>
+                    </Form>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
             <CardFooter>
               <p className="text-sm flex items-center gap-2">
