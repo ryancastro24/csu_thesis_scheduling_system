@@ -7,6 +7,27 @@ import { Button } from "@/components/ui/button";
 import { IoIosSchool } from "react-icons/io";
 import { AiFillSchedule } from "react-icons/ai";
 import { LuBellRing } from "react-icons/lu";
+import { BiSolidDashboard } from "react-icons/bi";
+import { FaStar } from "react-icons/fa";
+import { LuLogOut } from "react-icons/lu";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   useLocation,
   useNavigate,
@@ -15,11 +36,12 @@ import {
   useNavigation,
 } from "react-router-dom";
 import { FaUserEdit } from "react-icons/fa";
-import { RiSettings3Fill } from "react-icons/ri";
+
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { isAuthenticated } from "@/utils/auth";
 import { redirect } from "react-router-dom";
+import { getUserThesisDocuments } from "@/backend_api/schedules";
 import {
   Dialog,
   DialogContent,
@@ -37,18 +59,26 @@ export const loader = async () => {
 
   const userData: any = JSON.parse(user as any);
 
-  return { userData }; // Proceed if authenticated
+  const userThesisDocuments = await getUserThesisDocuments(userData.id);
+
+  return { userData, userThesisDocuments }; // Proceed if authenticated
 };
 const Dashboard = () => {
   const navigation = useNavigation();
-  const { userData } = useLoaderData();
+  const { userData, userThesisDocuments } = useLoaderData();
   const [openNotification, setOpenNotification] = useState(false);
   const location = useLocation();
-  console.log(location.pathname);
+
   const navigate = useNavigate();
 
   const handleDialogClose = () => {
     setOpenNotification(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("authToken"); // Remove token
+    localStorage.removeItem("user"); // Remove user data
+    navigate("/"); // Redirect to login page
   };
   return (
     <div className="w-full font-[Poppins] h-screen grid gap-3 p-3 grid-cols-[200px_1fr] dark:bg-[#121212]">
@@ -70,6 +100,20 @@ const Dashboard = () => {
             <h2 className="text-sm mt-4 py-2 px-3 rounded dark:bg-[#303030] bg-slate-200">
               Navigation
             </h2>
+
+            <li
+              onClick={() => navigate("/")}
+              className={`hover:bg-orange-500 ${
+                location.pathname === "/dashboard"
+                  ? "bg-orange-500 text-white"
+                  : ""
+              } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
+            >
+              <span className="text-lg">
+                <BiSolidDashboard />
+              </span>
+              Dashboard
+            </li>
 
             {userData.userType === "admin" && (
               <li
@@ -156,17 +200,17 @@ const Dashboard = () => {
             </li>
 
             <li
-              onClick={() => navigate("/dashboard/settings")}
+              onClick={() => navigate("/dashboard/favorites")}
               className={`hover:bg-orange-500 ${
-                location.pathname === "/dashboard/settings"
+                location.pathname === "/dashboard/favorites"
                   ? "bg-orange-500 text-white"
                   : ""
               } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
             >
               <span className="text-lg">
-                <RiSettings3Fill />{" "}
-              </span>{" "}
-              Settings
+                <FaStar />
+              </span>
+              My Favorites
             </li>
           </ul>
         </div>
@@ -178,6 +222,9 @@ const Dashboard = () => {
         <div className="w-full rounded-lg  dark:bg-[#1E1E1E] bg-slate-50 h-full p-3">
           <div className="w-full h-[50px] flex  justify-between">
             <div>
+              {location.pathname === "/dashboard" && (
+                <h1 className="ml-3 mt-3">Top 3 Thesis of the semester</h1>
+              )}
               {location.pathname === "/dashboard/users" && (
                 <h1 className="ml-3 mt-3">Active Users</h1>
               )}
@@ -195,20 +242,23 @@ const Dashboard = () => {
                 <h1 className="ml-3 mt-3">Manage Profile</h1>
               )}
 
-              {location.pathname === "/dashboard/settings" && (
-                <h1 className="ml-3 mt-3">Settings</h1>
+              {location.pathname === "/dashboard/favorites" && (
+                <h1 className="ml-3 mt-3">My Favorites</h1>
               )}
             </div>
             <div className="flex items-center gap-2">
               <ModeToggle />
 
               <div className="relative">
-                <Badge
-                  className="absolute -top-3 -right-2 rounded-full "
-                  variant="destructive"
-                >
-                  2
-                </Badge>
+                {userThesisDocuments.lenght < 1 && (
+                  <Badge
+                    className="absolute -top-3 -right-2 rounded-full "
+                    variant="destructive"
+                  >
+                    {userThesisDocuments.length}
+                  </Badge>
+                )}
+
                 <Button
                   onClick={() => setOpenNotification(true)}
                   className="cursor-pointer "
@@ -218,6 +268,38 @@ const Dashboard = () => {
                   <LuBellRing />
                 </Button>
               </div>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    className="cursor-pointer"
+                    variant="outline"
+                    size="icon"
+                  >
+                    <LuLogOut />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Are you sure you want to log out?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will log you out of your account and redirect you to
+                      the login page.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-red-500 hover:bg-red-600"
+                      onClick={handleLogout}
+                    >
+                      Confirm Logout
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
 
@@ -228,9 +310,33 @@ const Dashboard = () => {
                 <DialogTitle>Notifications</DialogTitle>
               </DialogHeader>
 
-              <div className="flex flex-col gap-3 ">
-                <div className="dark:bg-[#303030] bg-slate-100 rounded w-full h-[80px]"></div>
-                <div className="dark:bg-[#303030] bg-slate-100 rounded w-full h-[80px]"></div>
+              <div className="flex flex-col gap-3">
+                {userThesisDocuments.map((val: any) => (
+                  <Card
+                    key={val._id}
+                    className="dark:bg-[#303030] bg-slate-100"
+                  >
+                    <CardHeader>
+                      <CardTitle>{val.thesisTitle}</CardTitle>
+                      <CardDescription>
+                        Date: {val.schedule?.date} | Time: {val.schedule?.time}
+                      </CardDescription>
+                      <CardDescription>
+                        Authors:{" "}
+                        {val.students
+                          ?.map(
+                            (student: any) =>
+                              `${student.firstname} ${student.lastname}`
+                          )
+                          .join(", ")}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex justify-end gap-2">
+                      <Button variant="destructive">Reject</Button>
+                      <Button variant="default">Approve</Button>
+                    </CardFooter>
+                  </Card>
+                ))}
               </div>
 
               <DialogFooter>

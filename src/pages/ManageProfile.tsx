@@ -12,43 +12,40 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { useLoaderData } from "react-router-dom";
 
-// Ensure you have a utility function for conditional classNames
+export const loader = async () => {
+  const user = localStorage.getItem("user");
+  const userData: any = JSON.parse(user as any);
 
-interface Profile {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  photo: string | null;
-}
+  return { userData };
+};
 
 const ManageProfile = () => {
+  const { userData } = useLoaderData();
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [profile, setProfile] = useState<Profile>({
-    name: "Juan Dela Cruz",
-    email: "juan123@gmail.com",
-    password: "",
-    confirmPassword: "",
-    photo: null,
-  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profile, setProfile] = useState({
+    photo: userData.photo || "",
+    email: userData.email || "",
+    password: "",
+    confirmPassword: "",
+  });
 
-  // Handle input change
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle profile picture upload
   const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setProfile((prev) => ({
-        ...prev,
-        photo: URL.createObjectURL(file),
-      }));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile((prev) => ({ ...prev, photo: reader.result }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -74,11 +71,14 @@ const ManageProfile = () => {
 
           {/* Profile Details */}
           <div className="flex flex-col gap-2">
-            <h1 className="text-xl">Name: {profile.name}</h1>
+            <h1 className="text-xl">
+              Name: {userData.firstname} {userData.middlename.charAt(0)}.{" "}
+              {userData.lastname}
+            </h1>
             <h2 className="text-xs dark:text-[#ffffff91]">
-              211-02048 | CCIS Instructor I
+              {userData.id_number} | {userData.userType}
             </h2>
-            <h2 className="text-xs dark:text-[#ffffff91]">{profile.email}</h2>
+            <h2 className="text-xs dark:text-[#ffffff91]">{userData.email}</h2>
           </div>
         </div>
 
@@ -158,7 +158,6 @@ const ManageProfile = () => {
                 name="password"
                 value={profile.password}
                 onChange={handleInputChange}
-                className=""
               />
               <Button
                 variant="ghost"
@@ -179,7 +178,6 @@ const ManageProfile = () => {
                 name="confirmPassword"
                 value={profile.confirmPassword}
                 onChange={handleInputChange}
-                className=""
               />
               <Button
                 variant="ghost"

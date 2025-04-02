@@ -61,7 +61,7 @@ type Venues = {
   label: string;
   value: string;
 };
-
+import axios from "axios";
 const venueOptions: Venues[] = [
   { label: "Room 101", value: "Room 101" },
   { label: "Room 202", value: "Room 202" },
@@ -101,14 +101,19 @@ export async function loader() {
   const chairpersons = await getChairpersons();
   const thesisSchedules = await getThesisDocuments();
 
-  return { students, faculty, chairpersons, thesisSchedules };
+  const user = localStorage.getItem("user");
+  const userData: any = JSON.parse(user as any);
+
+  return { students, faculty, chairpersons, thesisSchedules, userData };
 }
 
 const ITEMS_PER_PAGE = 6;
 const Schedules = () => {
-  const { students, faculty, thesisSchedules } = useLoaderData();
+  const { students, faculty, thesisSchedules, userData } = useLoaderData();
+  const [generateDateLoading, setGenerateDateLoading] = useState(false);
   const actionData = useActionData();
   const navigation = useNavigation();
+  const [generatedSchedule, setGeneratedSchedule] = useState("");
   const [schedule, setSchedule] = useState("");
   const [, setOpenThesisModal] = useState(false);
 
@@ -159,6 +164,37 @@ const Schedules = () => {
     to: undefined,
   });
 
+  const handleSubmit = async () => {
+    setGenerateDateLoading(true);
+    const data = {
+      // Collect the necessary data to send in the request
+      panel1: selectedFaculty1?.id,
+      panel2: selectedFaculty2?.id,
+      panel3: selectedFaculty3?.id,
+      panel4: selectedFaculty4?.id,
+      startTime,
+      endTime,
+      dateRange: formattedDateRange,
+      chairperson: userData.id,
+      adminId: "67d29ce1990acc26a58cb53a",
+      // Add any other necessary fields here
+    };
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/api/schedules/generateThesisSchedule/data",
+        data
+      );
+
+      setGeneratedSchedule(response.data?.message);
+      setGenerateDateLoading(false);
+      return response.data; // Return the created department data
+    } catch (error) {
+      console.error("Error adding department:", error);
+      throw error; // Rethrow the error for handling
+    }
+  };
+
   const [thesisTitle, setThesisTitle] = useState("");
   const [venue, setVenue] = useState("");
 
@@ -178,27 +214,8 @@ const Schedules = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [newSchedule, setNewSchedule] = useState({
-    title: "",
-    description: "",
-    location: "",
-    date: "",
-    category: "",
-  });
 
   const handleDialogClose = () => {
-    setIsDialogOpen(false);
-  };
-
-  const handleDialogSubmit = () => {
-    console.log(newSchedule);
-    setNewSchedule({
-      title: "",
-      description: "",
-      location: "",
-      date: "",
-      category: "",
-    });
     setIsDialogOpen(false);
   };
 
@@ -224,11 +241,11 @@ const Schedules = () => {
   };
 
   useEffect(() => {
-    if (actionData?.message?.startsWith("Available Date")) {
-      const date = actionData.message.split(": ")[1]; // Extracts the date part
+    if (generatedSchedule.startsWith("Available Date")) {
+      const date = generatedSchedule.split(": ")[1]; // Extracts the date part
       setSchedule(date);
     }
-  }, [actionData]);
+  }, [generatedSchedule]);
   return (
     <div className="w-full h-full p-4">
       {/* Header with Search Input and Add Schedule Button */}
@@ -598,79 +615,75 @@ const Schedules = () => {
                               setEndTime={setEndTime}
                             />
 
-                            <Form method="POST">
-                              <Input
-                                value={formattedDateRange}
-                                type="hidden"
-                                name="dateRange"
-                              />
+                            <Input
+                              value={formattedDateRange}
+                              type="hidden"
+                              name="dateRange"
+                            />
 
-                              <Input
-                                value={startTime}
-                                type="hidden"
-                                name="startTime"
-                              />
+                            <Input
+                              value={startTime}
+                              type="hidden"
+                              name="startTime"
+                            />
 
-                              <Input
-                                value={endTime}
-                                type="hidden"
-                                name="endTime"
-                              />
-                              <Input
-                                value={selectedFaculty2?.id}
-                                type="hidden"
-                                name="panel2"
-                              />
-                              <Input
-                                value={selectedFaculty1?.id}
-                                type="hidden"
-                                name="panel1"
-                              />
-                              <Input
-                                value={selectedFaculty2?.id}
-                                type="hidden"
-                                name="panel2"
-                              />
-                              <Input
-                                value={selectedFaculty3?.id}
-                                type="hidden"
-                                name="panel3"
-                              />
-                              <Input
-                                value={"67d2918b990acc26a58cb4be"}
-                                type="hidden"
-                                name="chairperson"
-                              />
-                              <Input
-                                value={"67d29ce1990acc26a58cb53a"}
-                                type="hidden"
-                                name="adminId"
-                              />
+                            <Input
+                              value={endTime}
+                              type="hidden"
+                              name="endTime"
+                            />
+                            <Input
+                              value={selectedFaculty2?.id}
+                              type="hidden"
+                              name="panel2"
+                            />
+                            <Input
+                              value={selectedFaculty1?.id}
+                              type="hidden"
+                              name="panel1"
+                            />
+                            <Input
+                              value={selectedFaculty2?.id}
+                              type="hidden"
+                              name="panel2"
+                            />
+                            <Input
+                              value={selectedFaculty3?.id}
+                              type="hidden"
+                              name="panel3"
+                            />
+                            <Input
+                              value={"67d2918b990acc26a58cb4be"}
+                              type="hidden"
+                              name="chairperson"
+                            />
+                            <Input
+                              value={"67d29ce1990acc26a58cb53a"}
+                              type="hidden"
+                              name="adminId"
+                            />
 
-                              <Input
-                                value={selectedFaculty4?.id}
-                                type="hidden"
-                                name="panel4"
-                              />
-                              <Button
-                                type="submit"
-                                name="submit"
-                                value={"generateSchedule"}
-                                disabled={
-                                  selectedFaculty1 == null ||
-                                  selectedFaculty2 == null ||
-                                  selectedFaculty3 == null ||
-                                  selectedFaculty4 == null ||
-                                  startTime == "" ||
-                                  endTime == "" ||
-                                  dateRange.from == undefined ||
-                                  dateRange.to == undefined
-                                }
-                                className="w-full cursor-pointer"
-                              >
-                                Generate Date
-                              </Button>
-                            </Form>
+                            <Input
+                              value={selectedFaculty4?.id}
+                              type="hidden"
+                              name="panel4"
+                            />
+                            <Button
+                              disabled={
+                                selectedFaculty1 == null ||
+                                selectedFaculty2 == null ||
+                                selectedFaculty3 == null ||
+                                selectedFaculty4 == null ||
+                                startTime == "" ||
+                                endTime == "" ||
+                                dateRange.from == undefined ||
+                                dateRange.to == undefined
+                              }
+                              className="w-full cursor-pointer"
+                            >
+                              Generate Date
+                            </Button>
+
                             <span className="text-sm text-red-500">
                               {selectedFaculty1 == null ||
                               selectedFaculty2 == null ||
@@ -788,7 +801,6 @@ const Schedules = () => {
                           dateRange.from == undefined ||
                           dateRange.to == undefined
                         }
-                        onClick={handleDialogSubmit}
                       >
                         {navigation.state === "submitting" ? (
                           <>
@@ -1006,71 +1018,71 @@ const Schedules = () => {
                       setEndTime={setEndTime}
                     />
 
-                    <Form method="POST">
-                      <Input
-                        value={formattedDateRange}
-                        type="hidden"
-                        name="dateRange"
-                      />
+                    <Input
+                      value={formattedDateRange}
+                      type="hidden"
+                      name="dateRange"
+                    />
 
-                      <Input value={startTime} type="hidden" name="startTime" />
+                    <Input value={startTime} type="hidden" name="startTime" />
 
-                      <Input value={endTime} type="hidden" name="endTime" />
-                      <Input
-                        value={selectedFaculty2?.id}
-                        type="hidden"
-                        name="panel2"
-                      />
-                      <Input
-                        value={selectedFaculty1?.id}
-                        type="hidden"
-                        name="panel1"
-                      />
-                      <Input
-                        value={selectedFaculty2?.id}
-                        type="hidden"
-                        name="panel2"
-                      />
-                      <Input
-                        value={selectedFaculty3?.id}
-                        type="hidden"
-                        name="panel3"
-                      />
-                      <Input
-                        value={"67d2918b990acc26a58cb4be"}
-                        type="hidden"
-                        name="chairperson"
-                      />
-                      <Input
-                        value={"67d29ce1990acc26a58cb53a"}
-                        type="hidden"
-                        name="adminId"
-                      />
+                    <Input value={endTime} type="hidden" name="endTime" />
+                    <Input
+                      value={selectedFaculty2?.id}
+                      type="hidden"
+                      name="panel2"
+                    />
+                    <Input
+                      value={selectedFaculty1?.id}
+                      type="hidden"
+                      name="panel1"
+                    />
 
-                      <Input
-                        value={selectedFaculty4?.id}
-                        type="hidden"
-                        name="panel4"
-                      />
-                      <Button
-                        type="submit"
-                        name="submit"
-                        value={"generateSchedule"}
-                        disabled={
-                          selectedFaculty1 == null ||
-                          selectedFaculty2 == null ||
-                          selectedFaculty3 == null ||
-                          selectedFaculty4 == null ||
-                          startTime == "" ||
-                          endTime == "" ||
-                          dateRange.from == undefined ||
-                          dateRange.to == undefined
-                        }
-                        className="w-full cursor-pointer"
-                      >
-                        Generate Date
-                      </Button>
-                    </Form>
+                    <Input
+                      value={selectedFaculty3?.id}
+                      type="hidden"
+                      name="panel3"
+                    />
+                    <Input
+                      value={"67d2918b990acc26a58cb4be"}
+                      type="hidden"
+                      name="chairperson"
+                    />
+                    <Input
+                      value={"67d29ce1990acc26a58cb53a"}
+                      type="hidden"
+                      name="adminId"
+                    />
+
+                    <Input
+                      value={selectedFaculty4?.id}
+                      type="hidden"
+                      name="panel4"
+                    />
+                    <Button
+                      onClick={(event) => {
+                        event.preventDefault();
+                        handleSubmit();
+                      }}
+                      disabled={
+                        selectedFaculty1 == null ||
+                        selectedFaculty2 == null ||
+                        selectedFaculty3 == null ||
+                        selectedFaculty4 == null ||
+                        startTime == "" ||
+                        endTime == "" ||
+                        dateRange.from == undefined ||
+                        dateRange.to == undefined
+                      }
+                      className="w-full cursor-pointer"
+                    >
+                      {generateDateLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Generate Date"
+                      )}
+                    </Button>
+
                     <span className="text-sm text-red-500">
                       {selectedFaculty1 == null ||
                       selectedFaculty2 == null ||
@@ -1086,14 +1098,14 @@ const Schedules = () => {
 
                     <span
                       className={`text-sm ${
-                        actionData?.message.startsWith("Available Date")
+                        generatedSchedule.startsWith("Available Date")
                           ? "text-green-500"
                           : "text-red-500"
                       } `}
                     >
-                      {actionData?.message.startsWith("Available Date") &&
-                        `${actionData?.message} (${startTime} - ${endTime})`}
-                      {!actionData?.message.startsWith("Available Date") &&
+                      {generatedSchedule.startsWith("Available Date") &&
+                        `${generatedSchedule} (${startTime} - ${endTime})`}
+                      {!generatedSchedule.startsWith("Available Date") &&
                         actionData?.message}
                     </span>
                   </div>
@@ -1159,7 +1171,6 @@ const Schedules = () => {
                   dateRange.from == undefined ||
                   dateRange.to == undefined
                 }
-                onClick={handleDialogSubmit}
               >
                 Add Schedule
               </Button>

@@ -20,14 +20,25 @@ import Schedules, {
   loader as SchedulesLoader,
   action as SchedulesAction,
 } from "./pages/Schedules";
-import ManageProfile from "./pages/ManageProfile";
-import Settings from "./pages/Settings";
+import ManageProfile, {
+  loader as ManageProfileLoader,
+} from "./pages/ManageProfile";
+
 import { action as DestroyUser } from "./destroy/destroyUser";
 import { action as DestroySchedule } from "./destroy/destroySchedule";
 import { Toaster } from "@/components/ui/sonner";
 import UsersErrorPage from "./ErrorResponses/UsersErrorPage";
+import LandingPage, {
+  loader as LandingPageLoader,
+  action as LandingPageAction,
+} from "./pages/LandingPage";
 import { isAuthenticated } from "./utils/auth";
 import { redirect } from "react-router-dom";
+import Favorites, {
+  loader as FavoritesLoader,
+  action as FavoritesAction,
+} from "./pages/Favorites";
+
 // Loader to protect /landing page route
 const landingPageLoader = () => {
   if (isAuthenticated()) {
@@ -49,6 +60,12 @@ const router = createBrowserRouter([
     element: <Dashboard />,
     loader: DashboardLoader,
     children: [
+      {
+        element: <LandingPage />,
+        index: true,
+        loader: LandingPageLoader,
+        action: LandingPageAction,
+      },
       {
         path: "users",
         element: <UsersPage />,
@@ -88,11 +105,14 @@ const router = createBrowserRouter([
       {
         path: "manageprofile",
         element: <ManageProfile />,
+        loader: ManageProfileLoader,
       },
 
       {
-        path: "settings",
-        element: <Settings />,
+        path: "favorites",
+        element: <Favorites />,
+        loader: FavoritesLoader,
+        action: FavoritesAction,
       },
     ],
   },
