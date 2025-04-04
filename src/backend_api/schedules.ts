@@ -18,6 +18,7 @@ export async function getUserSchedules(id: string) {
     const response = await axios.get(
       `http://localhost:5000/api/schedules/${id}`
     );
+
     return response.data; // Return the retrieved data
   } catch (error) {
     console.error("Error fetching colleges:", error);
@@ -43,8 +44,7 @@ export async function getUserThesisDocuments(id: string) {
       `
 http://localhost:5000/api/thesisDocuments/specificThesisModel/data/${id}`
     );
-
-    console.log(response.data);
+    console.log("response.data:", response.data);
     return response.data; // Return the retrieved data
   } catch (error) {
     console.error("Error fetching colleges:", error);

@@ -84,8 +84,14 @@ export const action: ActionFunction = async ({ request }) => {
   console.log(data);
 
   if (data?.submit === "submitSchedule") {
-    const thesisSchedule = await createThesisSchedule(data);
-    console.log(thesisSchedule);
+    // Create a new FormData object to include the actual file
+    const thesisScheduleData = new FormData();
+    for (const [key, value] of Object.entries(data)) {
+      thesisScheduleData.append(key, value);
+    }
+
+    const thesisSchedule = await createThesisSchedule(thesisScheduleData);
+    console.log(data);
     return thesisSchedule;
   }
 
@@ -116,6 +122,16 @@ const Schedules = () => {
   const [generatedSchedule, setGeneratedSchedule] = useState("");
   const [schedule, setSchedule] = useState("");
   const [, setOpenThesisModal] = useState(false);
+  const [, setSelectedFile] = useState<File | null>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const file = event.target.files[0];
+      setSelectedFile(file); // Store the binary file directly
+
+      console.log(file);
+    }
+  };
 
   const [thesisType, setThesisType] = useState("");
 
@@ -245,6 +261,8 @@ const Schedules = () => {
       const date = generatedSchedule.split(": ")[1]; // Extracts the date part
       setSchedule(date);
     }
+
+    console.log(generatedSchedule);
   }, [generatedSchedule]);
   return (
     <div className="w-full h-full p-4">
@@ -423,21 +441,25 @@ const Schedules = () => {
                       Are you sure you want to delete this thesis?
                     </DialogDescription>
                   </DialogHeader>
-
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="secondary">
-                        Close
+                  <Form
+                    method="post"
+                    action={`/dashboard/schedules/${val?._id}/destroy`}
+                  >
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button type="button" variant="secondary">
+                          Close
+                        </Button>
+                      </DialogClose>
+                      <Button
+                        className="cursor-pointer"
+                        variant={"destructive"}
+                        type="submit"
+                      >
+                        Delete
                       </Button>
-                    </DialogClose>
-                    <Button
-                      className="cursor-pointer"
-                      variant={"destructive"}
-                      type="submit"
-                    >
-                      Delete
-                    </Button>
-                  </DialogFooter>
+                    </DialogFooter>
+                  </Form>
                 </DialogContent>
               </Dialog>
 
@@ -975,35 +997,34 @@ const Schedules = () => {
                       placeholder="Enter thesis title"
                     />
                   </div>
-
-                  <div className="space-y-1">
-                    <Label>Venue</Label>
-                    <Select value={venue} onValueChange={setVenue}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Venue" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {venueOptions.map((val) => (
-                          <SelectItem key={val.label} value={val.value}>
-                            {val.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label>Type</Label>
-                    <Select value={thesisType} onValueChange={setThesisType}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Thesis Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={"proposal"}>Proposal</SelectItem>
-
-                        <SelectItem value={"final"}>Final</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex space-x-4">
+                    <div className="space-y-1 w-full">
+                      <Label>Venue</Label>
+                      <Select value={venue} onValueChange={setVenue}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select Venue" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {venueOptions.map((val) => (
+                            <SelectItem key={val.label} value={val.value}>
+                              {val.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1 w-full">
+                      <Label>Type</Label>
+                      <Select value={thesisType} onValueChange={setThesisType}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select Thesis Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={"proposal"}>Proposal</SelectItem>
+                          <SelectItem value={"final"}>Final</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   <div className="space-y-1">
@@ -1106,7 +1127,7 @@ const Schedules = () => {
                       {generatedSchedule.startsWith("Available Date") &&
                         `${generatedSchedule} (${startTime} - ${endTime})`}
                       {!generatedSchedule.startsWith("Available Date") &&
-                        actionData?.message}
+                        generatedSchedule}
                     </span>
                   </div>
                 </CardContent>
@@ -1115,65 +1136,108 @@ const Schedules = () => {
           </Tabs>
 
           <DialogFooter>
-            <Button variant="ghost" onClick={handleDialogClose}>
-              Cancel
-            </Button>
-
-            <Form method="POST">
-              <Input
-                value={selectedStudent1?.id}
-                type="hidden"
-                name="student1"
-              />
-              <Input
-                value={selectedStudent2?.id}
-                type="hidden"
-                name="student2"
-              />
-              <Input
-                value={selectedStudent3?.id}
-                type="hidden"
-                name="student3"
-              />
-              <Input value={selectedFaculty?.id} type="hidden" name="adviser" />
-              <Input
-                value={`${startTime} - ${endTime}`}
-                type="hidden"
-                name="time"
-              />
-
-              <Input value={thesisType} type="hidden" name="type" />
-
-              <Input value={selectedFaculty1?.id} type="hidden" name="panel1" />
-              <Input value={selectedFaculty2?.id} type="hidden" name="panel2" />
-              <Input value={selectedFaculty3?.id} type="hidden" name="panel3" />
-
-              <Input value={selectedFaculty4?.id} type="hidden" name="panel4" />
-              <Input value={thesisTitle} type="hidden" name="thesisTitle" />
-              <Input value={venue} type="hidden" name="venue" />
-              <Input value={schedule} type="hidden" name="date" />
-              <Button
-                name="submit"
-                value={"submitSchedule"}
-                disabled={
-                  selectedStudent1 == null ||
-                  selectedStudent2 == null ||
-                  selectedStudent3 == null ||
-                  selectedFaculty == null ||
-                  selectedFaculty1 == null ||
-                  selectedFaculty2 == null ||
-                  selectedFaculty3 == null ||
-                  selectedFaculty4 == null ||
-                  thesisTitle == "" ||
-                  venue == "" ||
-                  startTime == "" ||
-                  endTime == "" ||
-                  dateRange.from == undefined ||
-                  dateRange.to == undefined
-                }
-              >
-                Add Schedule
-              </Button>
+            <Form method="POST" encType="multipart/form-data">
+              <div className="w-full flex justify-between items-center gap-10">
+                <div className="flex flex-col mb-4">
+                  <label htmlFor="file" className="mb-1">
+                    Upload File
+                  </label>
+                  <Input
+                    id="file"
+                    type="file"
+                    name="file"
+                    onChange={handleFileChange}
+                    accept=".pdf" // Specify accepted file types
+                  />
+                </div>
+                <Input
+                  value={selectedStudent1?.id}
+                  type="hidden"
+                  name="student1"
+                />
+                <Input
+                  value={selectedStudent2?.id}
+                  type="hidden"
+                  name="student2"
+                />
+                <Input
+                  value={selectedStudent3?.id}
+                  type="hidden"
+                  name="student3"
+                />
+                <Input
+                  value={`${startTime} - ${endTime}`}
+                  type="hidden"
+                  name="time"
+                />
+                <Input value={thesisType} type="hidden" name="type" />
+                <Input
+                  value={selectedFaculty1?.id}
+                  type="hidden"
+                  name="panel1"
+                />
+                <Input
+                  value={selectedFaculty2?.id}
+                  type="hidden"
+                  name="panel2"
+                />
+                <Input
+                  value={selectedFaculty3?.id}
+                  type="hidden"
+                  name="panel3"
+                />
+                <Input
+                  value={selectedFaculty4?.id}
+                  type="hidden"
+                  name="panel4"
+                />
+                <Input
+                  value={selectedFaculty?.id}
+                  type="hidden"
+                  name="adviser"
+                />
+                <Input value={thesisTitle} type="hidden" name="thesisTitle" />
+                <Input value={venue} type="hidden" name="venue" />
+                <Input value={schedule} type="hidden" name="date" />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={handleDialogClose}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    name="submit"
+                    value={"submitSchedule"}
+                    disabled={
+                      selectedStudent1 == null ||
+                      selectedStudent2 == null ||
+                      selectedStudent3 == null ||
+                      selectedFaculty == null ||
+                      selectedFaculty1 == null ||
+                      selectedFaculty2 == null ||
+                      selectedFaculty3 == null ||
+                      selectedFaculty4 == null ||
+                      thesisTitle == "" ||
+                      venue == "" ||
+                      startTime == "" ||
+                      endTime == "" ||
+                      dateRange.from == undefined ||
+                      dateRange.to == undefined
+                    }
+                  >
+                    {navigation.state === "submitting" ? (
+                      <h2>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Adding Schedule
+                      </h2>
+                    ) : (
+                      "Add Schedule"
+                    )}
+                  </Button>
+                </div>
+              </div>
             </Form>
           </DialogFooter>
         </DialogContent>

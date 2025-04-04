@@ -25,7 +25,7 @@ export async function getUserFavorites(id: string) {
 export async function removeFavorites(data: any) {
   try {
     const response = await axios.delete(
-      `http://localhost:5000/api/favorites/${data.userId}/${data.caseId}`
+      `http://localhost:5000/api/favorites/${data.userId}/${data.thesisId}`
     );
     return response.data;
   } catch (error) {

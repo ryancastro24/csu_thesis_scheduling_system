@@ -9,13 +9,8 @@ import { FaRegStar, FaStar } from "react-icons/fa6";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import Loader from "@/systemComponents/Loader";
-import {
-  Form,
-  useLoaderData,
-  ActionFunction,
-  useNavigation,
-} from "react-router-dom";
+
+import { Form, useLoaderData, ActionFunction } from "react-router-dom";
 import { getThesisDocuments } from "@/backend_api/thesisDocument";
 import {
   addFavorites,
@@ -46,9 +41,10 @@ export const action: ActionFunction = async ({ request }) => {
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
     formData.entries()
   );
-
+  console.log("submitted data:", data);
   if (data?.action === "add") {
     const favorites = await addFavorites(data);
+
     return favorites;
   }
 
@@ -59,7 +55,6 @@ export const action: ActionFunction = async ({ request }) => {
 };
 
 const LandingPage = () => {
-  const navigation = useNavigation();
   const { userData, thesisDocuments, favorites } = useLoaderData();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -71,28 +66,32 @@ const LandingPage = () => {
   };
 
   const isFavorite = (thesisId: string) => {
-    return favorites.some((favorite: any) => favorite.caseId._id === thesisId);
+    return favorites.some(
+      (favorite: any) => favorite.thesisId?._id === thesisId
+    );
   };
 
-  if (navigation.state === "loading") {
-    return <Loader />;
-  }
+  const handleDownload = (documentLink: string) => {
+    window.open(documentLink, "_blank");
+  };
+
   return (
     <div className="w-full h-full flex flex-col gap-10 p-4">
       <div className="grid grid-cols-3 gap-5">
         {thesisDocuments.slice(0, 3).map((thesis: any) => (
           <Card
-            key={thesis._id}
+            key={thesis?._id}
             className="dark:bg-[#303030] bg-slate-100 flex flex-col h-full"
           >
             <CardHeader className="flex-1">
               <CardTitle className="line-clamp-2">
-                {thesis.thesisTitle}
+                {thesis?.thesisTitle}
               </CardTitle>
+
               <CardDescription>
                 Authors:{" "}
                 <span className="font-bold">
-                  {thesis.students
+                  {thesis?.students
                     .map((student: any) => student.lastname)
                     .join(", ")}
                 </span>
@@ -104,16 +103,16 @@ const LandingPage = () => {
                   onClick={() => handleStarClick(thesis)}
                   className="text-2xl cursor-pointer transition-colors"
                 >
-                  {isFavorite(thesis._id) ? (
+                  {isFavorite(thesis?._id) ? (
                     <FaStar className="text-yellow-500" />
                   ) : (
                     <FaRegStar className="text-gray-400" />
                   )}
                 </button>
-                <span className="mt-1">{thesis.ratingCount || 0}</span>
+                <span className="mt-1">{thesis?.ratingCount || 0}</span>
               </div>
               <button
-                onClick={() => {}}
+                onClick={() => handleDownload(thesis.documentLink)}
                 className="flex text-sm items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600"
               >
                 <span>Download</span>
@@ -186,7 +185,7 @@ const LandingPage = () => {
                 <span className="mt-1">{thesis.ratingCount || 0}</span>
               </div>
               <button
-                onClick={() => {}}
+                onClick={() => handleDownload(thesis.documentLink)}
                 className="flex text-xs items-center gap-1 px-2 py-1 bg-orange-500 text-white rounded-md hover:bg-orange-600"
               >
                 <span>Download</span>
@@ -228,7 +227,11 @@ const LandingPage = () => {
           {isFavorite(selectedThesis?._id || "") ? (
             <Form method="post">
               <input type="hidden" name="userId" value={userData.id} />
-              <input type="hidden" name="caseId" value={selectedThesis?._id} />
+              <input
+                type="hidden"
+                name="thesisId"
+                value={selectedThesis?._id}
+              />
               <input type="hidden" name="action" value="remove" />
               <DialogFooter className="flex gap-2">
                 <DialogClose asChild>
@@ -251,7 +254,11 @@ const LandingPage = () => {
           ) : (
             <Form method="post">
               <input type="hidden" name="userId" value={userData.id} />
-              <input type="hidden" name="caseId" value={selectedThesis?._id} />
+              <input
+                type="hidden"
+                name="thesisId"
+                value={selectedThesis?._id}
+              />
               <input type="hidden" name="action" value="add" />
               <DialogFooter className="flex gap-2">
                 <DialogClose asChild>

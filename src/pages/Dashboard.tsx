@@ -10,6 +10,8 @@ import { LuBellRing } from "react-icons/lu";
 import { BiSolidDashboard } from "react-icons/bi";
 import { FaStar } from "react-icons/fa";
 import { LuLogOut } from "react-icons/lu";
+import { Loader2 } from "lucide-react";
+
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -36,12 +38,13 @@ import {
   useNavigation,
 } from "react-router-dom";
 import { FaUserEdit } from "react-icons/fa";
-
+import { Form, ActionFunction } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { isAuthenticated } from "@/utils/auth";
 import { redirect } from "react-router-dom";
 import { getUserThesisDocuments } from "@/backend_api/schedules";
+import { updateThesisDocument } from "@/backend_api/thesisDocument";
 import {
   Dialog,
   DialogContent,
@@ -50,25 +53,59 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import Loader from "@/systemComponents/Loader";
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData();
+  const data: Record<string, FormDataEntryValue> = Object.fromEntries(
+    formData.entries()
+  );
+  console.log("submitted data:", data);
+
+  const { thesisId, panelId, status, remarks } = data;
+
+  const updatedThesis = await updateThesisDocument(thesisId, panelId, {
+    status,
+    remarks,
+  });
+
+  console.log("updatedThesis:", updatedThesis);
+
+  return { updatedThesis };
+};
+
 export const loader = async () => {
   if (!isAuthenticated()) {
     return redirect("/"); // Redirect to login if not authenticated
   }
 
   const user = localStorage.getItem("user");
-
-  const userData: any = JSON.parse(user as any);
-
-  const userThesisDocuments = await getUserThesisDocuments(userData.id);
+  const userData = user ? JSON.parse(user) : null; // Ensure userData is not null
+  const userThesisDocuments = await getUserThesisDocuments(userData?.id);
 
   return { userData, userThesisDocuments }; // Proceed if authenticated
 };
+
+interface DialogData {
+  open: boolean;
+  action: string;
+  thesis: {
+    _id: string;
+    thesisTitle: string;
+    schedule: { date: string; time: string };
+    students: { firstname: string; lastname: string }[];
+  } | null; // Define the structure of thesis
+}
+
 const Dashboard = () => {
   const navigation = useNavigation();
   const { userData, userThesisDocuments } = useLoaderData();
   const [openNotification, setOpenNotification] = useState(false);
+  const [remarks, setRemarks] = useState("");
+  const [dialogData, setDialogData] = useState<DialogData>({
+    open: false,
+    action: "",
+    thesis: null,
+  });
   const location = useLocation();
-
   const navigate = useNavigate();
 
   const handleDialogClose = () => {
@@ -80,6 +117,7 @@ const Dashboard = () => {
     localStorage.removeItem("user"); // Remove user data
     navigate("/"); // Redirect to login page
   };
+
   return (
     <div className="w-full font-[Poppins] h-screen grid gap-3 p-3 grid-cols-[200px_1fr] dark:bg-[#121212]">
       <div className="w-full h-full bg-slate-50 rounded-lg dark:bg-[#1E1E1E] px-2 py-4 flex flex-col gap-4">
@@ -250,7 +288,7 @@ const Dashboard = () => {
               <ModeToggle />
 
               <div className="relative">
-                {userThesisDocuments.lenght < 1 && (
+                {userThesisDocuments.length > 0 && (
                   <Badge
                     className="absolute -top-3 -right-2 rounded-full "
                     variant="destructive"
@@ -311,32 +349,61 @@ const Dashboard = () => {
               </DialogHeader>
 
               <div className="flex flex-col gap-3">
-                {userThesisDocuments.map((val: any) => (
-                  <Card
-                    key={val._id}
-                    className="dark:bg-[#303030] bg-slate-100"
-                  >
-                    <CardHeader>
-                      <CardTitle>{val.thesisTitle}</CardTitle>
-                      <CardDescription>
-                        Date: {val.schedule?.date} | Time: {val.schedule?.time}
-                      </CardDescription>
-                      <CardDescription>
-                        Authors:{" "}
-                        {val.students
-                          ?.map(
-                            (student: any) =>
-                              `${student.firstname} ${student.lastname}`
-                          )
-                          .join(", ")}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardFooter className="flex justify-end gap-2">
-                      <Button variant="destructive">Reject</Button>
-                      <Button variant="default">Approve</Button>
-                    </CardFooter>
-                  </Card>
-                ))}
+                {userThesisDocuments.length === 0 ? (
+                  <p>No notifications available.</p>
+                ) : (
+                  userThesisDocuments.map((val: any) => (
+                    <Card
+                      key={val._id}
+                      className="dark:bg-[#303030] bg-slate-100"
+                    >
+                      <CardHeader>
+                        <CardTitle>{val.thesisTitle}</CardTitle>
+                        <CardDescription>
+                          Date: {val.schedule?.date} | Time:{" "}
+                          {val.schedule?.time}
+                        </CardDescription>
+                        <CardDescription>
+                          Authors:{" "}
+                          {val.students
+                            ?.map(
+                              (student: any) =>
+                                `${student.firstname} ${student.lastname}`
+                            )
+                            .join(", ")}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardFooter className="flex justify-end gap-2">
+                        <Button
+                          variant="destructive"
+                          onClick={() => {
+                            setOpenNotification(false);
+                            setDialogData({
+                              open: true,
+                              action: "Reject",
+                              thesis: val,
+                            });
+                          }}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          variant="default"
+                          onClick={() => {
+                            setOpenNotification(false);
+                            setDialogData({
+                              open: true,
+                              action: "Approve",
+                              thesis: val,
+                            });
+                          }}
+                        >
+                          Approve
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))
+                )}
               </div>
 
               <DialogFooter>
@@ -347,6 +414,69 @@ const Dashboard = () => {
                 >
                   Cancel
                 </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog
+            open={dialogData.open}
+            onOpenChange={() => setDialogData({ ...dialogData, open: false })}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{dialogData.action}</DialogTitle>
+              </DialogHeader>
+              <textarea
+                onChange={(e) => setRemarks(e.target.value)}
+                value={remarks}
+                placeholder="Please provide a reason..."
+                className="w-full h-24 p-2 border rounded"
+              />
+              <DialogFooter>
+                <Button
+                  className="cursor-pointer"
+                  variant="ghost"
+                  onClick={() => setDialogData({ ...dialogData, open: false })}
+                >
+                  Cancel
+                </Button>
+
+                <Form method="post">
+                  <input type="hidden" name="panelId" value={userData.id} />
+
+                  <input type="hidden" name="remarks" value={remarks} />
+                  <input
+                    type="hidden"
+                    name="status"
+                    value={dialogData.action.toLowerCase()}
+                  />
+                  <input
+                    type="hidden"
+                    name="thesisId"
+                    value={dialogData.thesis?._id}
+                  />
+                  <Button
+                    onClick={() => {
+                      setDialogData({ ...dialogData, open: false });
+                    }}
+                    className={`${
+                      dialogData.action === "Reject"
+                        ? "bg-red-500 hover:bg-red-600"
+                        : "bg-green-500 hover:bg-green-600"
+                    }`}
+                    type="submit"
+                    disabled={navigation.state === "submitting"}
+                  >
+                    {navigation.state === "submitting" ? (
+                      <h2>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        `Submit ${dialogData.action}`
+                      </h2>
+                    ) : (
+                      `Submit ${dialogData.action}`
+                    )}
+                  </Button>
+                </Form>
               </DialogFooter>
             </DialogContent>
           </Dialog>

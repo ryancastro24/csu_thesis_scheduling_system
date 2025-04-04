@@ -60,15 +60,15 @@ const Favorites = () => {
       ) : (
         favorites.map((favorite: any) => (
           <Card
-            key={favorite._id}
+            key={favorite?._id}
             className="dark:bg-[#303030] mt-4 bg-slate-100"
           >
             <CardHeader>
-              <CardTitle>{favorite.caseId.thesisTitle}</CardTitle>
+              <CardTitle>{favorite.thesisId?.thesisTitle}</CardTitle>
               <CardDescription>
                 Authors:{" "}
                 <span className="font-bold">
-                  {favorite.caseId.students
+                  {favorite.thesisId?.students
                     .map((student: any) => student.lastname)
                     .join(", ")}
                 </span>
@@ -128,8 +128,8 @@ const Favorites = () => {
               <input type="hidden" name="userId" value={userData.id} />
               <input
                 type="hidden"
-                name="caseId"
-                value={selectedFavorite?.caseId._id}
+                name="thesisId"
+                value={selectedFavorite?.thesisId?._id}
               />{" "}
               {/* Fixed reference to selectedFavorite */}
               <button

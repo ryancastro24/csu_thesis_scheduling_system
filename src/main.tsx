@@ -5,7 +5,10 @@ import LoginPage from "./pages/LoginPage";
 import { action as LoginPageAction } from "./systemComponents/LoginForm";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "./components/ui/theme-provider";
-import Dashboard, { loader as DashboardLoader } from "./pages/Dashboard";
+import Dashboard, {
+  loader as DashboardLoader,
+  action as DashboardAction,
+} from "./pages/Dashboard";
 import UsersPage, {
   loader as UsersPageLoader,
   action as UsersPageAction,
@@ -39,6 +42,8 @@ import Favorites, {
   action as FavoritesAction,
 } from "./pages/Favorites";
 
+import { action as DestroyThesisDocument } from "./destroy/destroyThesisDocument";
+
 // Loader to protect /landing page route
 const landingPageLoader = () => {
   if (isAuthenticated()) {
@@ -59,6 +64,7 @@ const router = createBrowserRouter([
     path: "/dashboard",
     element: <Dashboard />,
     loader: DashboardLoader,
+    action: DashboardAction,
     children: [
       {
         element: <LandingPage />,
@@ -100,6 +106,12 @@ const router = createBrowserRouter([
         element: <Schedules />,
         loader: SchedulesLoader,
         action: SchedulesAction,
+        children: [
+          {
+            path: ":caseId/destroy",
+            action: DestroyThesisDocument,
+          },
+        ],
       },
 
       {
