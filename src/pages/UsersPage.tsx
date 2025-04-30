@@ -81,17 +81,14 @@ export const action: ActionFunction = async ({ request }) => {
     formData.entries()
   );
 
-  console.log(request.method);
-
+  console.log(formData.entries());
   if (request.method === "POST") {
-    const userData = await addUsertData(data);
-
+    const userData = await addUsertData(data); // Send formData directly
     return userData;
   }
 
   if (request.method === "PUT") {
     const userData = await updateUserData(data?.id, data);
-
     return userData;
   }
 };
@@ -125,7 +122,20 @@ export default function UsersPage() {
     password: "",
   });
 
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<{
+    firstname: string;
+    middlename: string;
+    lastname: string;
+    suffix: string;
+    email: string;
+    id_number: string;
+    college: string;
+    departmentId: string;
+    userType: string;
+    username: string;
+    password: string;
+    file: File | null; // Specify type for file
+  }>({
     firstname: "",
     middlename: "",
     lastname: "",
@@ -137,9 +147,12 @@ export default function UsersPage() {
     userType: "",
     username: "",
     password: "",
+    file: null, // Initialize to null to handle file upload
   });
 
   // Handle search input change
+
+  console.log(newUser);
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
@@ -191,20 +204,40 @@ export default function UsersPage() {
       userType: "",
       username: "",
       password: "",
+      file: null, // Reset to null
     });
     setIsDialogOpen(false);
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // Prevent default form submission
-    console.log("Submitting Form:", newUser);
-    fetcher.submit(newUser, { method: "POST" });
+    const formData = new FormData(); // Create FormData to handle file upload
+
+    // Check if newUser has any values before appending to formData
+    if (Object.values(newUser).some((value) => value !== null)) {
+      Object.entries(newUser).forEach(([key, value]) => {
+        if (value !== null) {
+          formData.append(key, value);
+        }
+      });
+
+      // Log the FormData values for debugging
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+      }
+    } else {
+      console.warn("FormData is empty. No values to submit."); // Log a warning if formData is empty
+    }
+
+    console.log("Submitting FormData:", formData); // Log to confirm FormData submission
+    fetcher.submit(formData, { method: "POST" }); // Submit FormData
   };
 
   const handleSubmitUpdate = (e: any) => {
     e.preventDefault(); // Prevent default form submission
     fetcher.submit(selectedUser, { method: "PUT" });
   };
+
   useEffect(() => {
     if (!fetcher.data || !fetcher.data.message) {
       return console.log("No Fetcher Data Available");
@@ -227,9 +260,13 @@ export default function UsersPage() {
         userType: "",
         username: "",
         password: "",
+        file: null, // Reset to null
       });
       setIsDialogOpen(false);
     } else if (fetcher.data.message.includes("User deleted successfully")) {
+      toast.success(fetcher.data.message);
+      setDeleteModal(false);
+    } else if (fetcher.data.message.includes("User approved successfully")) {
       toast.success(fetcher.data.message);
       setDeleteModal(false);
     } else if (fetcher.data.message.includes("User updated successfully")) {
@@ -368,13 +405,15 @@ export default function UsersPage() {
         <TableBody>
           {currentUsers.length > 0 ? (
             currentUsers.map((val: any) => (
-              <TableRow key={val._id}>
+              <TableRow
+                className={`${
+                  val.approved ? "" : "dark:bg-[#111111] bg-slate-300"
+                }`}
+                key={val._id}
+              >
                 <TableCell className="col-span-2 text-left flex items-center gap-2">
                   <Avatar>
-                    <AvatarImage
-                      src="https://github.com/shadcn.png"
-                      alt="@shadcn"
-                    />
+                    <AvatarImage src={val.profilePicture} alt="@shadcn" />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>{" "}
                   <div className="flex items-center gap-2 whitespace-nowrap">
@@ -390,28 +429,65 @@ export default function UsersPage() {
                 <TableCell className="text-center">
                   {val.departmentId.acronym}
                 </TableCell>
-                <TableCell className="text-center flex justify-end pr-5 items-center">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="text-lg cursor-pointer">
-                      <BsThreeDotsVertical />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-red-500"
-                        onClick={() => {
-                          setDeleteModal(true);
-                          setSelectedUserId(val._id);
-                        }}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleUpdateModal(val)}>
-                        Update
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell className="text-center">
+                  <div className="w-full h-full flex items-center justify-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="text-lg cursor-pointer">
+                        {fetcher.state === "submitting" ? (
+                          <Loader2 className="animate-spin" />
+                        ) : (
+                          <BsThreeDotsVertical />
+                        )}
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+
+                        {!val.approved && (
+                          <fetcher.Form
+                            method="post"
+                            action={`/dashboard/users/${val._id}/approve`}
+                          >
+                            <DropdownMenuItem
+                              asChild
+                              className="text-green-500"
+                            >
+                              <Button
+                                type="submit"
+                                variant={"ghost"}
+                                className="w-full justify-start"
+                              >
+                                {fetcher.state === "submitting" ? (
+                                  <>
+                                    {" "}
+                                    <Loader2 className="animate-spin" />
+                                    Loading
+                                  </>
+                                ) : (
+                                  "Approved"
+                                )}
+                              </Button>
+                            </DropdownMenuItem>
+                          </fetcher.Form>
+                        )}
+
+                        <DropdownMenuItem
+                          onClick={() => handleUpdateModal(val)}
+                        >
+                          Update
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-500"
+                          onClick={() => {
+                            setDeleteModal(true);
+                            setSelectedUserId(val._id);
+                          }}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                 </TableCell>
               </TableRow>
             ))
@@ -464,6 +540,7 @@ export default function UsersPage() {
           <fetcher.Form
             className="flex flex-col gap-5"
             method="POST"
+            encType="multipart/form-data" // Ensure the form can send files
             onSubmit={handleSubmit}
           >
             <DialogHeader>
@@ -655,6 +732,19 @@ export default function UsersPage() {
                   </CardHeader>
                   <CardContent className="space-y-2">
                     <div className="space-y-2">
+                      <Label>Profile Picture</Label>
+
+                      <Input
+                        required
+                        type="file"
+                        name="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null; // Ensure file is null if not selected
+                          setNewUser({ ...newUser, file: file });
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label>Username</Label>
 
                       <Input
@@ -727,7 +817,7 @@ export default function UsersPage() {
 
       {/* delete modal */}
       <Dialog open={deleteModal} onOpenChange={setDeleteModal}>
-        <DialogContent>
+        <DialogContent className="w-[500px]">
           <DialogHeader>
             <DialogTitle>Remove User Data</DialogTitle>
             <DialogDescription>
@@ -770,7 +860,7 @@ export default function UsersPage() {
 
       {/* update user data  */}
       <Dialog open={updateModal} onOpenChange={setUpdateModal}>
-        <DialogContent>
+        <DialogContent className="w-[500px]">
           <fetcher.Form
             className="flex flex-col gap-5"
             method="POST"

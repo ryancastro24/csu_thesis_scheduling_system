@@ -8,173 +8,74 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash } from "lucide-react";
+import { FcCancel } from "react-icons/fc";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
+  DialogClose,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Loader2 } from "lucide-react";
+import { updateThesisDocument } from "@/backend_api/thesisDocument";
 
-interface Thesis {
-  id: string;
-  thesisTitle: string;
-  students: string[];
-  type: string;
-  status: string;
-  scheduleDate: string | null;
-}
-
+import { getUserApprovedThesisDocuments } from "@/backend_api/thesisDocument";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-const initialThesisData: Thesis[] = [
-  {
-    id: "THS-001",
-    thesisTitle: "AI-Powered Chatbots in Education",
-    students: ["Alice Johnson", "Bob Smith"],
-    type: "Proposal",
-    status: "Ongoing",
-    scheduleDate: null,
-  },
-  {
-    id: "THS-002",
-    thesisTitle: "Blockchain for Secure Voting Systems",
-    students: ["Charlie Brown", "David White"],
-    type: "Final Defense",
-    status: "Scheduled",
-    scheduleDate: "2025-03-10",
-  },
-  {
-    id: "THS-003",
-    thesisTitle: "IoT-Based Smart Farming Solutions",
-    students: ["Eva Green", "Frank Black", "Rodulf Barkclay"],
-    type: "Proposal",
-    status: "Completed",
-    scheduleDate: "2025-02-15",
-  },
-  {
-    id: "THS-004",
-    thesisTitle: "Cybersecurity Threat Detection Using AI",
-    students: ["Grace Hall", "Henry Adams"],
-    type: "Final Defense",
-    status: "Pending",
-    scheduleDate: null,
-  },
-  {
-    id: "THS-005",
-    thesisTitle: "Augmented Reality for Online Shopping",
-    students: ["Isabella King", "Jack Miller"],
-    type: "Proposal",
-    status: "Ongoing",
-    scheduleDate: null,
-  },
-];
+  useLoaderData,
+  Form,
+  ActionFunction,
+  useNavigation,
+} from "react-router-dom";
+export const loader = async () => {
+  const user = localStorage.getItem("user");
+  const userData: any = JSON.parse(user as any);
+  const approvedThesisDocuments = await getUserApprovedThesisDocuments(
+    userData.id
+  );
+  return { userData, approvedThesisDocuments };
+};
 
-const studentList = [
-  "Alice Johnson",
-  "Bob Smith",
-  "Charlie Brown",
-  "David White",
-  "Eva Green",
-  "Frank Black",
-  "Rodulf Barkclay",
-  "Grace Hall",
-  "Henry Adams",
-  "Isabella King",
-  "Jack Miller",
-];
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData();
+  const data: Record<string, FormDataEntryValue> = Object.fromEntries(
+    formData.entries()
+  );
+
+  const { thesisId, panelId, status, remarks } = data;
+
+  const updatedThesis = await updateThesisDocument(thesisId, panelId, {
+    status,
+    remarks,
+  });
+
+  console.log("updatedThesis:", updatedThesis);
+  return updatedThesis;
+};
 
 const ITEMS_PER_PAGE = 6;
 
 const MyStudent: React.FC = () => {
-  const [thesisData, setThesisData] = useState<Thesis[]>(initialThesisData);
-  const [selectedThesis, setSelectedThesis] = useState<Thesis | null>(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    thesisTitle: "",
-    status: "",
-    students: ["", "", ""], // Holds three student names
-  });
-
+  const { approvedThesisDocuments, userData } = useLoaderData();
+  const navigation = useNavigation();
+  const [remarks, setRemarks] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const totalPages = Math.ceil(thesisData.length / ITEMS_PER_PAGE);
-  const paginatedData = thesisData.slice(
+  const totalPages = Math.ceil(approvedThesisDocuments.length / ITEMS_PER_PAGE);
+  const paginatedData = approvedThesisDocuments.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  const openEditModal = (thesis: Thesis) => {
-    setSelectedThesis(thesis);
-    setFormData({
-      thesisTitle: thesis.thesisTitle,
-      status: thesis.status,
-      students: [...thesis.students, "", ""].slice(0, 3), // Ensure exactly 3 slots
-    });
-    setEditModalOpen(true);
-  };
-
-  const openDeleteModal = (thesis: Thesis) => {
-    setSelectedThesis(thesis);
-    setDeleteModalOpen(true);
-  };
-
-  const handleEditSave = () => {
-    setThesisData((prevData) =>
-      prevData.map((item) =>
-        item.id === selectedThesis?.id
-          ? {
-              ...item,
-              thesisTitle: formData.thesisTitle,
-              status: formData.status,
-              students: formData.students.filter((s) => s),
-            }
-          : item
-      )
-    );
-    setEditModalOpen(false);
-  };
-
-  const handleDeleteConfirm = () => {
-    setThesisData((prevData) =>
-      prevData.filter((item) => item.id !== selectedThesis?.id)
-    );
-    setDeleteModalOpen(false);
-  };
-
   return (
     <div className="w-full h-full p-4 space-y-4">
-      <h1 className="text-2xl font-bold">My Students</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {paginatedData.map((val) => (
-          <div key={val.id} className="relative">
+        {paginatedData.map((val: any) => (
+          <div key={val._id} className="relative">
             <Card className="dark:bg-[#303030] bg-slate-100 group">
-              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-2">
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="p-1 bg-orange-500 hover:bg-orange-600 dark:hover:bg-orange-600 cursor-pointer"
-                  onClick={() => openEditModal(val)}
-                >
-                  <Pencil className="text-white" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="p-1 cursor-pointer bg-red-500 dark:bg-red-500 hover:bg-red-600 dark:hover:bg-red-600"
-                  onClick={() => openDeleteModal(val)}
-                >
-                  <Trash className="text-white" />
-                </Button>
-              </div>
+              <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex space-x-2"></div>
               <CardHeader>
                 <CardTitle>{val.thesisTitle}</CardTitle>
                 <CardDescription>
@@ -183,14 +84,114 @@ const MyStudent: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-sm">
-                  <strong>Students:</strong> {val.students.join(", ")}
+                  Authors:{" "}
+                  <span className="font-bold">
+                    {val?.students
+                      .map((student: any) => student.lastname)
+                      .join(", ")}
+                  </span>
                 </p>
               </CardContent>
-              <CardFooter>
-                <p>
-                  <strong>Schedule Date:</strong>{" "}
-                  {val.scheduleDate ? val.scheduleDate : "Not Scheduled"}
-                </p>
+              <CardFooter className="flex items-center justify-between">
+                {val.defended ? (
+                  <Button disabled variant={"secondary"}>
+                    Thesis Defended
+                  </Button>
+                ) : (
+                  <>
+                    <p
+                      className={`${
+                        val.status === "approved"
+                          ? "bg-green-400 dark:bg-green-700"
+                          : val.status === "pending"
+                          ? "bg-orange-400 dark:bg-orange-700"
+                          : "bg-red-500 dark:bg-red-700"
+                      } rounded py-2 px-3`}
+                    >
+                      {val.schedule?.date
+                        ? val.status === "rejected"
+                          ? "For Reschedule"
+                          : `Schedule Date: ${val.schedule.date}`
+                        : "No Schedule Available"}
+                    </p>
+
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="icon">
+                          <FcCancel />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[550px]">
+                        <DialogHeader>
+                          <DialogTitle>Reschedule Thesis</DialogTitle>
+                          <DialogDescription>
+                            Please provide a reason for rescheduling the thesis.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <textarea
+                          onChange={(e) => setRemarks(e.target.value)}
+                          value={remarks}
+                          className="w-full h-24 p-2 border rounded"
+                          placeholder="Enter your reason here..."
+                        ></textarea>
+                        <DialogFooter>
+                          <DialogClose>
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                /* Add your confirm logic here */
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </DialogClose>
+
+                          <Form method="post">
+                            <input
+                              type="hidden"
+                              name="panelId"
+                              value={userData.id}
+                            />
+
+                            <input
+                              type="hidden"
+                              name="remarks"
+                              value={remarks}
+                            />
+                            <input
+                              type="hidden"
+                              name="status"
+                              value={"reject"}
+                            />
+                            <input
+                              type="hidden"
+                              name="thesisId"
+                              value={val._id}
+                            />
+                            <Button
+                              disabled={navigation.state === "submitting"}
+                              type="submit"
+                              className="cursor-pointer"
+                              variant="destructive"
+                              onClick={() => {
+                                /* Add your confirm logic here */
+                              }}
+                            >
+                              {navigation.state === "submitting" ? (
+                                <>
+                                  <Loader2 className="animate-spin" />
+                                  Please wait
+                                </>
+                              ) : (
+                                "Reschedule"
+                              )}
+                            </Button>
+                          </Form>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                  </>
+                )}
               </CardFooter>
             </Card>
           </div>
@@ -217,93 +218,6 @@ const MyStudent: React.FC = () => {
           Next
         </Button>
       </div>
-
-      {/* Edit Modal */}
-      {editModalOpen && (
-        <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit Thesis</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <Input
-                type="text"
-                placeholder="Thesis Title"
-                value={formData.thesisTitle}
-                onChange={(e) =>
-                  setFormData({ ...formData, thesisTitle: e.target.value })
-                }
-              />
-              <Input
-                type="text"
-                placeholder="Status"
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData({ ...formData, status: e.target.value })
-                }
-              />
-
-              {formData.students.map((student, index) => (
-                <Select
-                  key={index}
-                  onValueChange={(value) => {
-                    const updatedStudents = [...formData.students];
-                    updatedStudents[index] = value;
-                    setFormData({ ...formData, students: updatedStudents });
-                  }}
-                  value={student}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={`Select Student ${index + 1}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {studentList.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ))}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleEditSave}>Save Changes</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteModalOpen && (
-        <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Confirm Deletion</DialogTitle>
-            </DialogHeader>
-            <p>
-              Are you sure you want to delete{" "}
-              <strong>{selectedThesis?.thesisTitle}</strong>?
-            </p>
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setDeleteModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="bg-red-500 hover:bg-red-600"
-                onClick={handleDeleteConfirm}
-              >
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 };

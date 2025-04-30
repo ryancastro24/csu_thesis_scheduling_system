@@ -11,7 +11,11 @@ import { BiSolidDashboard } from "react-icons/bi";
 import { FaStar } from "react-icons/fa";
 import { LuLogOut } from "react-icons/lu";
 import { Loader2 } from "lucide-react";
-
+import { LuLogs } from "react-icons/lu";
+import { IoIosDocument } from "react-icons/io";
+import { FaCodePullRequest } from "react-icons/fa6";
+import { FaUserFriends } from "react-icons/fa";
+import { FaUserGraduate } from "react-icons/fa";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -46,12 +50,19 @@ import { redirect } from "react-router-dom";
 import { getUserThesisDocuments } from "@/backend_api/schedules";
 import { updateThesisDocument } from "@/backend_api/thesisDocument";
 import {
+  getAllnotificationsReaded,
+  updateNotifications,
+} from "@/backend_api/notification";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { getPanelApprovals } from "@/backend_api/panelApproval";
+import { getAdviserAcceptanceRequests } from "@/backend_api/adviserAcceptance";
+import { getUserProfile } from "@/backend_api/users";
 import Loader from "@/systemComponents/Loader";
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
@@ -62,14 +73,19 @@ export const action: ActionFunction = async ({ request }) => {
 
   const { thesisId, panelId, status, remarks } = data;
 
-  const updatedThesis = await updateThesisDocument(thesisId, panelId, {
-    status,
-    remarks,
-  });
+  if (request.method === "PUT") {
+    const updatedNotification = await updateNotifications(data.id);
+    return { updatedNotification };
+  }
 
-  console.log("updatedThesis:", updatedThesis);
+  if (request.method === "POST") {
+    const updatedThesis = await updateThesisDocument(thesisId, panelId, {
+      status,
+      remarks,
+    });
 
-  return { updatedThesis };
+    return { updatedThesis };
+  }
 };
 
 export const loader = async () => {
@@ -80,8 +96,21 @@ export const loader = async () => {
   const user = localStorage.getItem("user");
   const userData = user ? JSON.parse(user) : null; // Ensure userData is not null
   const userThesisDocuments = await getUserThesisDocuments(userData?.id);
+  const panelApprovals = await getPanelApprovals(userData.id);
+  const adviserAcceptanaceData = await getAdviserAcceptanceRequests(
+    userData.id
+  );
 
-  return { userData, userThesisDocuments }; // Proceed if authenticated
+  const userProfile = await getUserProfile(userData.id);
+  const notifications = await getAllnotificationsReaded();
+  return {
+    userData,
+    userThesisDocuments,
+    notifications,
+    panelApprovals,
+    adviserAcceptanaceData,
+    userProfile,
+  }; // Proceed if authenticated
 };
 
 interface DialogData {
@@ -97,7 +126,14 @@ interface DialogData {
 
 const Dashboard = () => {
   const navigation = useNavigation();
-  const { userData, userThesisDocuments } = useLoaderData();
+  const {
+    userData,
+    userThesisDocuments,
+    notifications,
+    panelApprovals,
+    adviserAcceptanaceData,
+    userProfile,
+  } = useLoaderData();
   const [openNotification, setOpenNotification] = useState(false);
   const [remarks, setRemarks] = useState("");
   const [dialogData, setDialogData] = useState<DialogData>({
@@ -123,7 +159,7 @@ const Dashboard = () => {
       <div className="w-full h-full bg-slate-50 rounded-lg dark:bg-[#1E1E1E] px-2 py-4 flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" />
+            <AvatarImage src={userProfile.profilePicture} />
             <AvatarFallback>CN</AvatarFallback>
           </Avatar>
 
@@ -152,6 +188,22 @@ const Dashboard = () => {
               </span>
               Dashboard
             </li>
+
+            {userData.userType === "student" && (
+              <li
+                onClick={() => navigate("/dashboard/thesisSection")}
+                className={`hover:bg-orange-500 ${
+                  location.pathname === "/dashboard/thesisSection"
+                    ? "bg-orange-500 text-white"
+                    : ""
+                } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
+              >
+                <span className="text-lg">
+                  <IoIosDocument />
+                </span>
+                Thesis section
+              </li>
+            )}
 
             {userData.userType === "admin" && (
               <li
@@ -188,18 +240,92 @@ const Dashboard = () => {
             )}
 
             {userData.userType === "faculty" && (
+              <>
+                <li
+                  onClick={() => navigate("/dashboard/students")}
+                  className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
+                    location.pathname === "/dashboard/students"
+                      ? "bg-orange-500 text-white"
+                      : ""
+                  }`}
+                >
+                  <span className="text-lg">
+                    <FaUserGraduate />
+                  </span>
+                  Thesis Reviews
+                </li>
+
+                <li
+                  onClick={() => navigate("/dashboard/advisees")}
+                  className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
+                    location.pathname === "/dashboard/advisees"
+                      ? "bg-orange-500 text-white"
+                      : ""
+                  }`}
+                >
+                  <span className="text-lg">
+                    <FaUserFriends />
+                  </span>
+                  My Advisees
+                </li>
+
+                <li
+                  onClick={() => navigate("/dashboard/panelProposals")}
+                  className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 relative ${
+                    location.pathname === "/dashboard/panelProposals"
+                      ? "bg-orange-500 text-white"
+                      : ""
+                  }`}
+                >
+                  <span className="text-lg">
+                    <IoIosSchool />
+                  </span>
+                  <span className="flex items-center">Panel Proposals</span>
+                  {panelApprovals?.filter(
+                    (approval: any) => approval.status === "pending"
+                  ).length > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-2 -right-2"
+                    >
+                      {
+                        panelApprovals.filter(
+                          (approval: any) => approval.status === "pending"
+                        ).length
+                      }
+                    </Badge>
+                  )}
+                </li>
+              </>
+            )}
+
+            {userData.userType === "faculty" && (
               <li
-                onClick={() => navigate("/dashboard/students")}
-                className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
-                  location.pathname === "/dashboard/students"
+                onClick={() => navigate("/dashboard/proposals")}
+                className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 relative ${
+                  location.pathname === "/dashboard/proposals"
                     ? "bg-orange-500 text-white"
                     : ""
                 }`}
               >
                 <span className="text-lg">
-                  <IoIosSchool />
+                  <FaCodePullRequest />
                 </span>
-                My Advisees
+                Proposals
+                {adviserAcceptanaceData?.filter(
+                  (acceptance: any) => acceptance.status === "pending"
+                ).length > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-2 -right-2"
+                  >
+                    {
+                      adviserAcceptanaceData.filter(
+                        (acceptance: any) => acceptance.status === "pending"
+                      ).length
+                    }
+                  </Badge>
+                )}
               </li>
             )}
 
@@ -216,6 +342,22 @@ const Dashboard = () => {
                   <AiFillSchedule />
                 </span>
                 Schedules
+              </li>
+            )}
+
+            {["chairperson", "admin"].includes(userData.userType) && (
+              <li
+                onClick={() => navigate("/dashboard/logs")}
+                className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
+                  location.pathname === "/dashboard/logs"
+                    ? "bg-orange-500 text-white"
+                    : ""
+                }`}
+              >
+                <span className="text-lg">
+                  <LuLogs />
+                </span>
+                Logs
               </li>
             )}
 
@@ -270,7 +412,7 @@ const Dashboard = () => {
                 <h1 className="ml-3 mt-3">My Calendar</h1>
               )}
               {location.pathname === "/dashboard/students" && (
-                <h1 className="ml-3 mt-3">My Advisees</h1>
+                <h1 className="ml-3 mt-3">My Thesis Schedules</h1>
               )}
               {location.pathname === "/dashboard/schedules" && (
                 <h1 className="ml-3 mt-3">Schedules</h1>
@@ -283,19 +425,48 @@ const Dashboard = () => {
               {location.pathname === "/dashboard/favorites" && (
                 <h1 className="ml-3 mt-3">My Favorites</h1>
               )}
+
+              {location.pathname === "/dashboard/advisees" && (
+                <h1 className="ml-3 mt-3">My Advicees</h1>
+              )}
+              {location.pathname === "/dashboard/logs" && (
+                <h1 className="ml-3 mt-3">Logs</h1>
+              )}
+
+              {location.pathname === "/dashboard/proposals" && (
+                <h1 className="ml-3 mt-3">Thesis Proposals</h1>
+              )}
+              {location.pathname === "/dashboard/panelProposals" && (
+                <h1 className="ml-3 mt-3">Panel Proposals</h1>
+              )}
+              {location.pathname === "/dashboard/thesisSection" && (
+                <h1 className="ml-3 mt-3">Thesis Journey</h1>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <ModeToggle />
 
               <div className="relative">
-                {userThesisDocuments.length > 0 && (
-                  <Badge
-                    className="absolute -top-3 -right-2 rounded-full "
-                    variant="destructive"
-                  >
-                    {userThesisDocuments.length}
-                  </Badge>
-                )}
+                {userThesisDocuments.length > 0 &&
+                  userData.userType === "faculty" && (
+                    <Badge
+                      className="absolute -top-3 -right-2 rounded-full "
+                      variant="destructive"
+                    >
+                      {userThesisDocuments.length}
+                    </Badge>
+                  )}
+
+                {notifications.length > 0 &&
+                  (userData.userType === "chairperson" ||
+                    userData.userType === "admin") && (
+                    <Badge
+                      className="absolute -top-3 -right-2 rounded-full "
+                      variant="destructive"
+                    >
+                      {notifications.length}
+                    </Badge>
+                  )}
 
                 <Button
                   onClick={() => setOpenNotification(true)}
@@ -343,67 +514,111 @@ const Dashboard = () => {
 
           {/* Add Schedule Dialog */}
           <Dialog open={openNotification} onOpenChange={setOpenNotification}>
-            <DialogContent>
+            <DialogContent className="max-h-[80vh] overflow-y-auto w-[650px]">
               <DialogHeader>
                 <DialogTitle>Notifications</DialogTitle>
               </DialogHeader>
 
               <div className="flex flex-col gap-3">
-                {userThesisDocuments.length === 0 ? (
-                  <p>No notifications available.</p>
-                ) : (
-                  userThesisDocuments.map((val: any) => (
-                    <Card
-                      key={val._id}
-                      className="dark:bg-[#303030] bg-slate-100"
-                    >
-                      <CardHeader>
-                        <CardTitle>{val.thesisTitle}</CardTitle>
-                        <CardDescription>
-                          Date: {val.schedule?.date} | Time:{" "}
-                          {val.schedule?.time}
-                        </CardDescription>
-                        <CardDescription>
-                          Authors:{" "}
-                          {val.students
-                            ?.map(
-                              (student: any) =>
-                                `${student.firstname} ${student.lastname}`
-                            )
-                            .join(", ")}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardFooter className="flex justify-end gap-2">
-                        <Button
-                          variant="destructive"
-                          onClick={() => {
-                            setOpenNotification(false);
-                            setDialogData({
-                              open: true,
-                              action: "Reject",
-                              thesis: val,
-                            });
-                          }}
-                        >
-                          Reject
-                        </Button>
-                        <Button
-                          variant="default"
-                          onClick={() => {
-                            setOpenNotification(false);
-                            setDialogData({
-                              open: true,
-                              action: "Approve",
-                              thesis: val,
-                            });
-                          }}
-                        >
-                          Approve
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))
-                )}
+                {(userData.userType === "chairperson" ||
+                  userData.userType === "admin") &&
+                  (notifications.length === 0 ? (
+                    <p>No notifications available.</p>
+                  ) : (
+                    notifications.map((val: any) => (
+                      <Card
+                        key={val._id}
+                        className="dark:bg-[#303030] bg-slate-100"
+                      >
+                        <CardHeader>
+                          <CardTitle>{val?.thesisId?.thesisTitle}</CardTitle>
+                          <CardDescription>
+                            Date: {val.thesisId?.schedule?.date} | Time:{" "}
+                            {val.thesisId?.schedule?.time}
+                          </CardDescription>
+                          <CardDescription className="flex items-center justify-between">
+                            <span>{val.userId?.name}</span>
+                            <span
+                              className={`px-3 py-2 text-md rounded font-bold italic  ${
+                                val.status === "approve"
+                                  ? "text-green-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {val.status}
+                            </span>
+
+                            <Form method="PUT">
+                              <input type="hidden" name="id" value={val._id} />
+                              <Button
+                                className="cursor-pointer"
+                                variant={"secondary"}
+                              >
+                                Mark as read
+                              </Button>
+                            </Form>
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    ))
+                  ))}
+
+                {userData.userType === "faculty" &&
+                  (userThesisDocuments.length === 0 ? (
+                    <p>No notifications available.</p>
+                  ) : (
+                    userThesisDocuments.map((val: any) => (
+                      <Card
+                        key={val._id}
+                        className="dark:bg-[#303030] bg-slate-100"
+                      >
+                        <CardHeader>
+                          <CardTitle>{val.thesisTitle}</CardTitle>
+                          <CardDescription>
+                            Date: {val.schedule?.date} | Time:{" "}
+                            {val.schedule?.time}
+                          </CardDescription>
+                          <CardDescription>
+                            Authors:{" "}
+                            {val.students
+                              ?.map(
+                                (student: any) =>
+                                  `${student.firstname} ${student.lastname}`
+                              )
+                              .join(", ")}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardFooter className="flex justify-end gap-2">
+                          <Button
+                            variant="destructive"
+                            onClick={() => {
+                              setOpenNotification(false);
+                              setDialogData({
+                                open: true,
+                                action: "Reject",
+                                thesis: val,
+                              });
+                            }}
+                          >
+                            Reject
+                          </Button>
+                          <Button
+                            variant="default"
+                            onClick={() => {
+                              setOpenNotification(false);
+                              setDialogData({
+                                open: true,
+                                action: "Approve",
+                                thesis: val,
+                              });
+                            }}
+                          >
+                            Approve
+                          </Button>
+                        </CardFooter>
+                      </Card>
+                    ))
+                  ))}
               </div>
 
               <DialogFooter>
@@ -422,7 +637,7 @@ const Dashboard = () => {
             open={dialogData.open}
             onOpenChange={() => setDialogData({ ...dialogData, open: false })}
           >
-            <DialogContent>
+            <DialogContent className="w-[500px]">
               <DialogHeader>
                 <DialogTitle>{dialogData.action}</DialogTitle>
               </DialogHeader>

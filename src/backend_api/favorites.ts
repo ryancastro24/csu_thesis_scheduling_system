@@ -1,10 +1,8 @@
 import axios from "axios";
+const baseAPI = import.meta.env.VITE_BACKEND_API_ENDPOINT;
 export async function addFavorites(data: any) {
   try {
-    const response = await axios.post(
-      "http://localhost:5000/api/favorites/",
-      data
-    );
+    const response = await axios.post(`${baseAPI}/favorites/`, data);
     return response.data; // Return the created department data
   } catch (error) {
     console.error("Error adding department:", error);
@@ -14,7 +12,7 @@ export async function addFavorites(data: any) {
 
 export async function getUserFavorites(id: string) {
   try {
-    const response = await axios(`http://localhost:5000/api/favorites/${id}`);
+    const response = await axios(`${baseAPI}/favorites/${id}`);
     return response.data; // Return the created department data
   } catch (error) {
     console.error("Error adding department:", error);
@@ -25,7 +23,7 @@ export async function getUserFavorites(id: string) {
 export async function removeFavorites(data: any) {
   try {
     const response = await axios.delete(
-      `http://localhost:5000/api/favorites/${data.userId}/${data.thesisId}`
+      `${baseAPI}/favorites/${data.userId}/${data.thesisId}`
     );
     return response.data;
   } catch (error) {

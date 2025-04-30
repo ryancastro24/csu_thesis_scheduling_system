@@ -27,7 +27,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import { getUserSchedules } from "@/backend_api/schedules";
+import { getUserSchedules, updateUserSchedule } from "@/backend_api/schedules";
 
 import { addNewSchedule } from "@/backend_api/calendar";
 export const loader = async () => {
@@ -68,11 +68,16 @@ export const action: ActionFunction = async ({ request }) => {
     formData.entries()
   );
 
-  const newSchedule = await addNewSchedule(data);
+  if (request.method === "POST") {
+    const newSchedule = await addNewSchedule(data);
+    return newSchedule;
+  }
 
-  console.log(newSchedule);
-
-  return newSchedule;
+  if (request.method === "PUT") {
+    console.log("updated data", data);
+    const updatedSchedule = await updateUserSchedule(data.id, data);
+    return updatedSchedule;
+  }
 };
 export default function Calendar() {
   const { userData, schedules } = useLoaderData();
@@ -80,25 +85,20 @@ export default function Calendar() {
   console.log(schedules);
   const navigation = useNavigation();
 
-  const [events, setEvents] = useState([
-    {
-      _id: "67d597f97d06867afaec240d",
-      date: "2025-03-25",
-      time: "9:00AM - 11:00AM",
-      eventType: "Class",
-      userId: "67d29ce1990acc26a58cb53a",
-      createdAt: "2025-03-15T15:08:41.828Z",
-      updatedAt: "2025-03-15T15:08:41.828Z",
-    },
-  ]);
-
   const [openModal, setOpenModal] = useState(false);
+  const [updateModal, setUpdateModal] = useState(false); // New state for update modal
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [eventType, setEventType] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [deleteModal, setDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
+  const [eventToUpdate, setEventToUpdate] = useState<string | null>(null);
+
+  const [selectedEvent, setSelectedEvent] = useState({
+    eventType: "",
+    date: "",
+  });
 
   // Handle date click to open modal
   const handleDateClick = (info: any) => {
@@ -109,26 +109,20 @@ export default function Calendar() {
     setOpenModal(true);
   };
 
-  // Add event to state
-  const handleAddEvent = () => {
-    if (!eventType.trim() || !selectedDate || !startTime || !endTime) return;
-
-    const newEvent = {
-      _id: String(Date.now()),
-      date: selectedDate,
-      time: `${startTime} - ${endTime}`,
-      eventType,
-      userId: "67d29ce1990acc26a58cb53a",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setEvents([...events, newEvent]);
+  // Open update modal and set values
+  const handleUpdateClick = () => {
+    setUpdateModal(true);
   };
 
   // Open delete modal and store event ID
   const handleEventClick = (info: any) => {
     setEventToDelete(info.event.id);
+    setEventToUpdate(info.event.id);
+    console.log(info);
+    setSelectedEvent({
+      eventType: info.event.title,
+      date: info.event.startStr,
+    });
     setDeleteModal(true);
   };
 
@@ -149,7 +143,7 @@ export default function Calendar() {
 
       {/* Add Event Modal */}
       <Dialog open={openModal} onOpenChange={setOpenModal}>
-        <DialogContent>
+        <DialogContent className="w-[500px]">
           <DialogHeader>
             <DialogTitle>Add Event</DialogTitle>
             <DialogDescription>
@@ -238,7 +232,7 @@ export default function Calendar() {
               <Button
                 disabled={navigation.state === "submitting"}
                 className="cursor-pointer"
-                onClick={handleAddEvent}
+                type="submit"
               >
                 {navigation.state === "submitting" ? (
                   <>
@@ -255,13 +249,130 @@ export default function Calendar() {
         </DialogContent>
       </Dialog>
 
+      {/* Update Event Modal */}
+      <Dialog open={updateModal} onOpenChange={setUpdateModal}>
+        <DialogContent className="w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Update Event</DialogTitle>
+            <DialogDescription>
+              Update details for the event on {selectedEvent.date}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="updateEventType">Event Type</Label>
+              <input
+                id="updateEventType"
+                defaultValue={selectedEvent.eventType}
+                onChange={(e) =>
+                  setSelectedEvent({
+                    ...selectedEvent,
+                    eventType: e.target.value,
+                  })
+                }
+                placeholder="Enter event type (e.g., Class, Meeting)"
+                className="border p-2 rounded"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Start Time Picker */}
+              <div className="flex flex-col gap-2">
+                <Label>Start Time</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                    >
+                      {startTime ? startTime : "Select start time"}
+                      <Clock className="ml-2 h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-4 space-y-4">
+                    <Input
+                      type="time"
+                      value={convertTo24HourFormat(startTime)}
+                      onChange={(e) =>
+                        setStartTime(formatTimeTo12Hour(e.target.value))
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              {/* End Time Picker */}
+              <div className="flex flex-col gap-2">
+                <Label>End Time</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between"
+                    >
+                      {endTime ? endTime : "Select end time"}
+                      <Clock className="ml-2 h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-64 p-4 space-y-4">
+                    <Input
+                      type="time"
+                      value={convertTo24HourFormat(endTime)}
+                      onChange={(e) =>
+                        setEndTime(formatTimeTo12Hour(e.target.value))
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setUpdateModal(false)}>
+              Cancel
+            </Button>
+
+            <Form method="PUT">
+              <Input name="date" value={selectedEvent.date} type="hidden" />
+              <Input
+                name="eventType"
+                value={selectedEvent.eventType}
+                type="hidden"
+              />
+              <Input
+                name="time"
+                value={`${startTime} - ${endTime}`}
+                type="hidden"
+              />
+              <Input name="id" value={eventToUpdate || ""} type="hidden" />
+              <Button
+                disabled={navigation.state === "submitting"}
+                className="cursor-pointer"
+                type="submit"
+              >
+                {navigation.state === "submitting" ? (
+                  <>
+                    {" "}
+                    <Loader2 className="animate-spin" />
+                    Please wait
+                  </>
+                ) : (
+                  "Update schedule"
+                )}
+              </Button>
+            </Form>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Delete Event Modal */}
       <Dialog open={deleteModal} onOpenChange={setDeleteModal}>
-        <DialogContent>
+        <DialogContent className="w-[500px]">
           <DialogHeader>
-            <DialogTitle>Delete Event</DialogTitle>
+            <DialogTitle>{selectedEvent.eventType}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this activity?
+              What do you want to do with this event?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -286,10 +397,14 @@ export default function Calendar() {
                     Please wait
                   </>
                 ) : (
-                  "Confirm"
+                  "Delete"
                 )}
               </Button>
             </Form>
+
+            <Button className="cursor-pointer" onClick={handleUpdateClick}>
+              Update
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

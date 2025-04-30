@@ -18,13 +18,17 @@ import {
   loader as MyCalendarLoader,
   action as MyCalendarAction,
 } from "./systemComponents/Calendar";
-import MyStudent from "./pages/MyStudent";
+import MyStudent, {
+  loader as MyStudentLoader,
+  action as MyStudentAction,
+} from "./pages/MyStudent";
 import Schedules, {
   loader as SchedulesLoader,
   action as SchedulesAction,
 } from "./pages/Schedules";
 import ManageProfile, {
   loader as ManageProfileLoader,
+  action as ManageProfileAction,
 } from "./pages/ManageProfile";
 
 import { action as DestroyUser } from "./destroy/destroyUser";
@@ -41,10 +45,26 @@ import Favorites, {
   loader as FavoritesLoader,
   action as FavoritesAction,
 } from "./pages/Favorites";
-
+import { action as UserApprovalAction } from "./systemComponents/UserApproval";
 import { action as DestroyThesisDocument } from "./destroy/destroyThesisDocument";
-
+import LogsPage, { loader as LogsPageLoader } from "./pages/LogsPage";
+import ThesisSection, {
+  loader as ThesisSectionLoader,
+  action as ThesisSectionAction,
+} from "./pages/ThesisSection";
+import PanelApprovals, {
+  loader as PanelApprovalsLoaders,
+  action as PanelApprovalsAction,
+} from "./pages/PanelApprovals";
+import Proposals, {
+  loader as ProposalsLoader,
+  action as ProposalsAction,
+} from "./pages/Proposals";
 // Loader to protect /landing page route
+import AdviseeComponent, {
+  loader as AdviseeComponentLoader,
+  action as AdviseeComponentAction,
+} from "./pages/AdviseeComponent";
 const landingPageLoader = () => {
   if (isAuthenticated()) {
     return redirect("/dashboard"); // Redirect to dashboard if already logged in
@@ -83,6 +103,11 @@ const router = createBrowserRouter([
             path: ":userId/destroy",
             action: DestroyUser,
           },
+
+          {
+            path: ":userId/approve",
+            action: UserApprovalAction,
+          },
         ],
       },
       {
@@ -100,6 +125,20 @@ const router = createBrowserRouter([
       {
         path: "students",
         element: <MyStudent />,
+        loader: MyStudentLoader,
+        action: MyStudentAction,
+      },
+      {
+        path: "advisees",
+        element: <AdviseeComponent />,
+        loader: AdviseeComponentLoader,
+        action: AdviseeComponentAction,
+      },
+      {
+        path: "thesisSection",
+        element: <ThesisSection />,
+        loader: ThesisSectionLoader,
+        action: ThesisSectionAction,
       },
       {
         path: "schedules",
@@ -118,8 +157,28 @@ const router = createBrowserRouter([
         path: "manageprofile",
         element: <ManageProfile />,
         loader: ManageProfileLoader,
+        action: ManageProfileAction,
       },
 
+      {
+        path: "proposals",
+        element: <Proposals />,
+        loader: ProposalsLoader,
+        action: ProposalsAction,
+      },
+
+      {
+        path: "panelProposals",
+        element: <PanelApprovals />,
+        loader: PanelApprovalsLoaders,
+        action: PanelApprovalsAction,
+      },
+
+      {
+        path: "logs",
+        element: <LogsPage />,
+        loader: LogsPageLoader,
+      },
       {
         path: "favorites",
         element: <Favorites />,

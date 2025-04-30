@@ -1,10 +1,13 @@
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect, useRef } from "react";
 import ProfilePieChart from "@/systemComponents/ProfilePieChart";
+import { toast } from "sonner";
 import { ProfileBarChart } from "@/systemComponents/ProfileBarChart";
 import { RiEdit2Fill, RiEyeFill, RiEyeOffFill } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useNavigation } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,17 +15,38 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useLoaderData } from "react-router-dom";
 
+import {
+  Form,
+  ActionFunction,
+  useLoaderData,
+  useActionData,
+} from "react-router-dom";
+import { updateUserProfile } from "@/backend_api/users";
+import { getUserProfile } from "@/backend_api/users";
 export const loader = async () => {
   const user = localStorage.getItem("user");
   const userData: any = JSON.parse(user as any);
 
-  return { userData };
+  const userProfile = await getUserProfile(userData.id);
+  return { userData, userProfile };
+};
+
+export const action: ActionFunction = async ({ request }) => {
+  const formData = await request.formData();
+  const data: Record<string, FormDataEntryValue> = Object.fromEntries(
+    formData.entries()
+  );
+
+  const updatedProfile = await updateUserProfile(data.userId, formData);
+
+  return { updatedProfile };
 };
 
 const ManageProfile = () => {
-  const { userData } = useLoaderData();
+  const { userData, userProfile } = useLoaderData();
+  const actionData = useActionData();
+  const navigation = useNavigation();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -32,7 +56,34 @@ const ManageProfile = () => {
     password: "",
     confirmPassword: "",
   });
+  const hasShownToast = useRef(false);
 
+  useEffect(() => {
+    if (actionData?.updatedProfile && !hasShownToast.current) {
+      if (actionData.updatedProfile.message) {
+        toast.success(actionData.updatedProfile.message, {
+          style: {
+            backgroundColor: "green",
+            color: "white",
+            border: "none",
+            fontSize: "16px",
+          },
+        });
+      } else if (actionData.updatedProfile.error) {
+        toast.error(actionData.updatedProfile.error, {
+          style: {
+            backgroundColor: "red",
+            color: "white",
+            border: "none",
+            fontSize: "16px",
+          },
+        });
+      }
+      hasShownToast.current = true;
+    }
+  }, [actionData]);
+
+  console.log("user profile", userData.profilePicture);
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));
@@ -56,9 +107,9 @@ const ManageProfile = () => {
         <div className="flex items-center gap-8">
           {/* Profile Image */}
           <div className="relative w-[100px] h-[100px] rounded-full overflow-hidden group">
-            {profile.photo ? (
+            {userProfile.profilePicture ? (
               <img
-                src={profile.photo}
+                src={userProfile.profilePicture}
                 alt="Profile"
                 className="w-full h-full object-cover rounded-full"
               />
@@ -104,13 +155,23 @@ const ManageProfile = () => {
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
+          <Form
+            method="post"
+            encType="multipart/form-data"
+            className="space-y-6"
+          >
             {/* Profile Picture Upload (Rounded & Centered) */}
             <div className="flex flex-col items-center gap-4">
               <div className="relative w-[120px] h-[120px] rounded-full overflow-hidden group border border-gray-300 dark:border-gray-600">
                 {profile.photo ? (
                   <img
                     src={profile.photo}
+                    alt="Profile"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : userProfile.profilePicture ? (
+                  <img
+                    src={userProfile.profilePicture}
                     alt="Profile"
                     className="w-full h-full object-cover rounded-full"
                   />
@@ -128,6 +189,7 @@ const ManageProfile = () => {
                   <RiEdit2Fill className="text-white text-lg" />
                   <input
                     type="file"
+                    name="file"
                     id="photoUploadModal"
                     className="hidden"
                     accept="image/*"
@@ -138,6 +200,8 @@ const ManageProfile = () => {
             </div>
 
             {/* Email Input */}
+
+            <Input type="hidden" name="userId" value={userData.id} />
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -151,15 +215,14 @@ const ManageProfile = () => {
 
             {/* Password Input with Toggle */}
             <div className="relative">
-              <Label htmlFor="password">New Password</Label>
+              <Label htmlFor="password">Old Password</Label>
               <Input
                 type={showPassword ? "text" : "password"}
                 id="password"
-                name="password"
-                value={profile.password}
-                onChange={handleInputChange}
+                name="oldPassword"
               />
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 className="absolute cursor-pointer right-1 top-6"
@@ -171,15 +234,14 @@ const ManageProfile = () => {
 
             {/* Confirm Password Input with Toggle */}
             <div className="relative">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="newPassword">New Password</Label>
               <Input
-                type={showConfirmPassword ? "text" : "password"}
-                id="confirmPassword"
-                name="confirmPassword"
-                value={profile.confirmPassword}
-                onChange={handleInputChange}
+                type={showConfirmPassword ? "text" : "password"} // Use showPassword for both fields
+                id="newPassword"
+                name="newPassword"
               />
               <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 className="absolute right-1 cursor-pointer top-6"
@@ -188,19 +250,29 @@ const ManageProfile = () => {
                 {showConfirmPassword ? <RiEyeOffFill /> : <RiEyeFill />}
               </Button>
             </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant={"outline"} onClick={() => setIsEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-orange-500 hover:bg-orange-600"
-              onClick={() => setIsEditOpen(false)}
-            >
-              Save Changes
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant={"outline"}
+                onClick={() => setIsEditOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                {navigation.state === "submitting" ? (
+                  <>
+                    <Loader2 className="animate-spin" />
+                    Please wait
+                  </>
+                ) : (
+                  "Update Profile"
+                )}
+              </Button>
+            </DialogFooter>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

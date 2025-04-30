@@ -1,13 +1,9 @@
 import { useState, useEffect } from "react";
-import {
-  Form,
-  ActionFunction,
-  useActionData,
-  useNavigation,
-} from "react-router-dom";
+import { Form, ActionFunction, useNavigation } from "react-router-dom";
 import { format } from "date-fns";
 import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 import { Loader2 } from "lucide-react";
+const baseAPI = import.meta.env.VITE_BACKEND_API_ENDPOINT;
 import {
   Card,
   CardContent,
@@ -16,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { FaCheck } from "react-icons/fa6";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DateTimeRangePicker } from "@/systemComponents/DateAndTimeRangePicker";
@@ -46,9 +43,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FaEye } from "react-icons/fa";
 import { FaTrash } from "react-icons/fa";
-import { AiFillEdit } from "react-icons/ai";
+import { FaXmark } from "react-icons/fa6";
+import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaCircleMinus, FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
-
+import { FaCalendarDays } from "react-icons/fa6";
+import { MdMarkEmailRead } from "react-icons/md";
 import {
   Command,
   CommandInput,
@@ -70,10 +69,11 @@ const venueOptions: Venues[] = [
 ];
 import { getStudents, getfaculty, getChairpersons } from "@/backend_api/users";
 import { useLoaderData } from "react-router-dom";
-import { generateSchedule } from "@/backend_api/schedules";
 import {
   createThesisSchedule,
   getThesisDocuments,
+  rescheduleThesis,
+  updateThesisScheduleApproval,
 } from "@/backend_api/thesisDocument";
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
@@ -95,10 +95,27 @@ export const action: ActionFunction = async ({ request }) => {
     return thesisSchedule;
   }
 
-  if (data?.submit === "generateSchedule") {
-    const schedule = await generateSchedule(data);
-    console.log(schedule);
-    return schedule;
+  if (data?.submit === "reschedule") {
+    const rescheduleThesisData = await rescheduleThesis(data.id, data);
+    return rescheduleThesisData;
+  }
+
+  if (data?.submit === "forScheduleStatusReject") {
+    const updateThesisScheduleApprovalData = await updateThesisScheduleApproval(
+      data.thesisId,
+      data
+    );
+
+    return updateThesisScheduleApprovalData;
+  }
+
+  if (data?.submit === "forScheduleStatusApprove") {
+    const updateThesisScheduleApprovalData = await updateThesisScheduleApproval(
+      data.thesisId,
+      data
+    );
+
+    return updateThesisScheduleApprovalData;
   }
 };
 export async function loader() {
@@ -117,12 +134,35 @@ const ITEMS_PER_PAGE = 6;
 const Schedules = () => {
   const { students, faculty, thesisSchedules, userData } = useLoaderData();
   const [generateDateLoading, setGenerateDateLoading] = useState(false);
-  const actionData = useActionData();
+  const [generateDateRescheduleLoading, setGenerateDateRescheduleLoading] =
+    useState(false);
+  const [isGeneratedDateDialogOpen, setIsGeneratedDateDialogOpen] =
+    useState(true);
   const navigation = useNavigation();
-  const [generatedSchedule, setGeneratedSchedule] = useState("");
+  const [generatedSchedule, setGeneratedSchedule] = useState<
+    Array<{ date: string; time: string }>
+  >([]);
+  const [generatedReschedule, setGeneratedRescheduleUpdate] = useState<
+    Array<{ date: string; time: string }>
+  >([]);
   const [schedule, setSchedule] = useState("");
+  const [rescheduleDate, setRescheduleDate] = useState("");
+  const [rescheduleStartTime, setRescheduleStartTime] = useState("");
+  const [rescheduleEndTime, setRescheduleEndTime] = useState("");
   const [, setOpenThesisModal] = useState(false);
   const [, setSelectedFile] = useState<File | null>(null);
+  const [selectedThesis, setSelectedThesis] = useState<any | null>(null);
+  const [verifiedDateMessage, setVerifiedDateMessage] = useState("");
+
+  // Function to handle downloading the approval file
+  const handleDownloadApprovalFile = (thesis: any) => {
+    if (thesis.approvalFile) {
+      // Open the PDF in a new tab
+      window.open(thesis.approvalFile, "_blank");
+    } else {
+      alert("No approval file available for viewing");
+    }
+  };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
@@ -182,8 +222,9 @@ const Schedules = () => {
 
   const handleSubmit = async () => {
     setGenerateDateLoading(true);
+
+    console.log(selectedFaculty1);
     const data = {
-      // Collect the necessary data to send in the request
       panel1: selectedFaculty1?.id,
       panel2: selectedFaculty2?.id,
       panel3: selectedFaculty3?.id,
@@ -192,23 +233,108 @@ const Schedules = () => {
       endTime,
       dateRange: formattedDateRange,
       chairperson: userData.id,
-      adminId: "67d29ce1990acc26a58cb53a",
-      // Add any other necessary fields here
+      adminId: "67ff1871d66d128fd30735db",
     };
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/schedules/generateThesisSchedule/data",
+        `${baseAPI}/schedules/generateThesisSchedule/data`,
         data
       );
 
-      setGeneratedSchedule(response.data?.message);
+      const scheduleData = response.data?.data || [];
+      setGeneratedSchedule(scheduleData);
+      // Automatically set the first schedule
+      if (scheduleData.length > 0) {
+        const firstSchedule = scheduleData[0];
+        handleSetDateTime(firstSchedule.date, firstSchedule.time);
+      }
       setGenerateDateLoading(false);
+      return response.data;
+    } catch (error) {
+      console.error("Error adding department:", error);
+      throw error;
+    }
+  };
+
+  const handleSubmitDReschedule = async () => {
+    setGenerateDateRescheduleLoading(true);
+    const data = {
+      panel1: selectedThesis?.panels[0]?._id || null,
+      panel2: selectedThesis?.panels[1]?._id || null,
+      panel3: selectedThesis?.panels[2]?._id || null,
+      panel4: selectedThesis?.panels[3]?._id || null,
+      dateRange: formattedDateRange,
+      chairperson: userData.id,
+      adminId: "67ff1871d66d128fd30735db",
+    };
+
+    try {
+      const response = await axios.post(
+        `${baseAPI}/schedules/generateThesisSchedule/data`,
+        data
+      );
+
+      const scheduleData = response.data?.data || [];
+      setGeneratedRescheduleUpdate(scheduleData);
+      // Automatically set the first schedule
+      if (scheduleData.length > 0) {
+        const firstSchedule = scheduleData[0];
+        handleSetRescheduleDateTime(firstSchedule.date, firstSchedule.time);
+      }
+      return response.data;
+    } catch (error) {
+      console.error("Error adding department:", error);
+      throw error;
+    } finally {
+      setGenerateDateRescheduleLoading(false);
+    }
+  };
+
+  const handleVerifyDateTime = async (date: string, time: string) => {
+    const data = {
+      date: date,
+      time: time,
+      panel1: selectedFaculty1?.id,
+      panel2: selectedFaculty2?.id,
+      panel3: selectedFaculty3?.id,
+      panel4: selectedFaculty4?.id,
+      chairperson: userData.id,
+      adminId: "67d29ce1990acc26a58cb53a",
+    };
+
+    console.log(data);
+
+    try {
+      const response = await axios.post(
+        `${baseAPI}/schedules/verifyGenerateDateTime/data`,
+        data
+      );
+
+      setVerifiedDateMessage(response.data?.message);
+
       return response.data; // Return the created department data
     } catch (error) {
       console.error("Error adding department:", error);
       throw error; // Rethrow the error for handling
+    } finally {
     }
+  };
+
+  const handleSetDateTime = (date: string, time: string) => {
+    setSchedule(date);
+    const revisedTime = time.split(" - ");
+    setStartTime(revisedTime[0]);
+    setEndTime(revisedTime[1]);
+    setIsGeneratedDateDialogOpen(false);
+  };
+
+  const handleSetRescheduleDateTime = (date: string, time: string) => {
+    setRescheduleDate(date);
+    const revisedTime = time.split(" - ");
+    setRescheduleStartTime(revisedTime[0]);
+    setRescheduleEndTime(revisedTime[1]);
+    setIsGeneratedDateDialogOpen(false);
   };
 
   const [thesisTitle, setThesisTitle] = useState("");
@@ -257,13 +383,12 @@ const Schedules = () => {
   };
 
   useEffect(() => {
-    if (generatedSchedule.startsWith("Available Date")) {
-      const date = generatedSchedule.split(": ")[1]; // Extracts the date part
-      setSchedule(date);
+    if (verifiedDateMessage) {
+      const timer = setTimeout(() => setVerifiedDateMessage(""), 5000);
+      return () => clearTimeout(timer); // Cleanup on component unmount or message change
     }
+  }, [verifiedDateMessage]);
 
-    console.log(generatedSchedule);
-  }, [generatedSchedule]);
   return (
     <div className="w-full h-full p-4">
       {/* Header with Search Input and Add Schedule Button */}
@@ -291,10 +416,14 @@ const Schedules = () => {
             <CardHeader>
               <CardTitle>{val?.thesisTitle}</CardTitle>
               <CardDescription>
-                Scheduled Date: {val?.schedule.date}
+                Scheduled Date: {val?.schedule?.date || "Not set"}
               </CardDescription>
               <CardDescription>
-                Time: {val?.schedule.time} | {val?.venue}
+                Time: {val?.schedule?.time || "Not set"} | Venue:{" "}
+                {val?.venue || "TBA"}
+              </CardDescription>
+              <CardDescription>
+                Type: {val?.type == "proposal" ? "Proposal" : "Final"}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex items-center gap-4">
@@ -398,10 +527,10 @@ const Schedules = () => {
 
                         <div className="flex flex-col ">
                           <span className="text-sm opacity-50">
-                            Date: {val.schedule.date}
+                            Date: {val.schedule?.date}
                           </span>
                           <span className="text-sm opacity-50">
-                            Time: {val.schedule.time}
+                            Time: {val.schedule?.time}
                           </span>
                           <span className="text-sm opacity-50">
                             Venu : {val.venue}
@@ -416,7 +545,7 @@ const Schedules = () => {
                         Close
                       </Button>
                     </DialogClose>
-                    <Button className="cursor-pointer" type="submit">
+                    <Button className="cursor-pointer">
                       Download Manuscript
                     </Button>
                   </DialogFooter>
@@ -463,383 +592,338 @@ const Schedules = () => {
                 </DialogContent>
               </Dialog>
 
-              {/* update thesis model */}
+              <Button
+                className="cursor-pointer "
+                size={"icon"}
+                variant={"outline"}
+                onClick={() => handleDownloadApprovalFile(val)}
+              >
+                <FaFileCircleCheck />
+              </Button>
+              {val.forScheduleStatus === "approve" && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      onClick={() => {
+                        setOpenThesisModal(true);
+                        setSelectedThesis(val);
+                      }}
+                      className={`cursor-pointer ${
+                        val.reschedule ? "bg-red-500" : ""
+                      }`}
+                      size={"icon"}
+                    >
+                      <FaCalendarDays />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="w-[500px]  overflow-auto  p-4 rounded-lg shadow-lg">
+                    <DialogHeader>
+                      <DialogTitle>Set Thesis Schedule</DialogTitle>
+                      <DialogDescription>
+                        Select venue and schedule date
+                      </DialogDescription>
+                    </DialogHeader>
 
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    className="cursor-pointer "
-                    size={"icon"}
-                    variant={"outline"}
-                  >
-                    <AiFillEdit />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Update Thesis Schedule</DialogTitle>
-                  </DialogHeader>
+                    <div className="space-y-1 w-full">
+                      <Label>Venue</Label>
+                      <Select value={venue} onValueChange={setVenue}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select Venue" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {venueOptions.map((val) => (
+                            <SelectItem key={val.label} value={val.value}>
+                              {val.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <Tabs defaultValue="students" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="students">Students</TabsTrigger>
-                      <TabsTrigger value="panels">Panels</TabsTrigger>
-                      <TabsTrigger value="schedule">Schedule</TabsTrigger>
-                    </TabsList>
+                    <div className="space-y-1">
+                      <Label>Schedule Date</Label>
 
-                    {/* Students Tab */}
-                    <TabsContent value="students">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Student Details</CardTitle>
-                          <CardDescription>
-                            Select student members of the thesis.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                          <SearchableDropdown
-                            label="Student 1"
-                            options={students}
-                            value={selectedStudent1} // Pass the entire object
-                            onValueChange={setSelectedStudent1} // Ensure it updates correctly
-                          />
-
-                          <SearchableDropdown
-                            label="Student 2"
-                            options={students}
-                            value={selectedStudent2} // Pass the entire object
-                            onValueChange={setSelectedStudent2} // Ensure it updates correctly
-                          />
-                          <SearchableDropdown
-                            label="Student 3"
-                            value={selectedStudent3} // Pass the entire object
-                            onValueChange={setSelectedStudent3} // Ensure it updates correctly
-                            options={students}
-                          />
-
-                          <SearchableDropdown
-                            label="Adviser"
-                            value={selectedFaculty} // Pass the entire object
-                            onValueChange={setSelectedFaculty} // Ensure it updates correctly
-                            options={faculty}
-                          />
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    {/* Panels Tab */}
-                    <TabsContent value="panels">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Panel Members</CardTitle>
-                          <CardDescription>
-                            Enter details of panel members for thesis
-                            evaluation.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                          <SearchableDropdown
-                            label="Panel 1"
-                            value={selectedFaculty1} // Pass the entire object
-                            onValueChange={setSelectedFaculty1} // Ensure it updates correctly
-                            options={faculty}
-                          />
-
-                          <SearchableDropdown
-                            label="Panel 2"
-                            value={selectedFaculty2} // Pass the entire object
-                            onValueChange={setSelectedFaculty2} // Ensure it updates correctly
-                            options={faculty}
-                          />
-
-                          <SearchableDropdown
-                            label="Panel 3"
-                            value={selectedFaculty3} // Pass the entire object
-                            onValueChange={setSelectedFaculty3} // Ensure it updates correctly
-                            options={faculty}
-                          />
-
-                          <SearchableDropdown
-                            label="Oral Adviser"
-                            value={selectedFaculty4} // Pass the entire object
-                            onValueChange={setSelectedFaculty4} // Ensure it updates correctly
-                            options={faculty}
-                          />
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-
-                    {/* Schedule Tab */}
-                    <TabsContent value="schedule">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle>Thesis Defense Schedule</CardTitle>
-                          <CardDescription>
-                            Select venue and generate date for the thesis
-                            defense.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                          <div className="space-y-1">
-                            <Label>Thesis Title</Label>
-                            <Input
-                              value={thesisTitle}
-                              onChange={(e) => setThesisTitle(e.target.value)}
-                              type="text"
-                              placeholder="Enter thesis title"
-                            />
-                          </div>
-
-                          <div className="space-y-1">
-                            <Label>Venue</Label>
-                            <Select value={venue} onValueChange={setVenue}>
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Venue" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {venueOptions.map((val) => (
-                                  <SelectItem key={val.label} value={val.value}>
-                                    {val.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-1">
-                            <Label>Type</Label>
-                            <Select
-                              value={thesisType}
-                              onValueChange={setThesisType}
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select Thesis Type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value={"proposal"}>
-                                  Proposal
-                                </SelectItem>
-
-                                <SelectItem value={"final"}>Final</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-1">
-                            <Label>Schedule Date</Label>
-
-                            <DateTimeRangePicker
-                              dateRange={dateRange}
-                              setDateRange={setDateRange}
-                              startTime={startTime}
-                              setStartTime={setStartTime}
-                              endTime={endTime}
-                              setEndTime={setEndTime}
-                            />
-
-                            <Input
-                              value={formattedDateRange}
-                              type="hidden"
-                              name="dateRange"
-                            />
-
-                            <Input
-                              value={startTime}
-                              type="hidden"
-                              name="startTime"
-                            />
-
-                            <Input
-                              value={endTime}
-                              type="hidden"
-                              name="endTime"
-                            />
-                            <Input
-                              value={selectedFaculty2?.id}
-                              type="hidden"
-                              name="panel2"
-                            />
-                            <Input
-                              value={selectedFaculty1?.id}
-                              type="hidden"
-                              name="panel1"
-                            />
-                            <Input
-                              value={selectedFaculty2?.id}
-                              type="hidden"
-                              name="panel2"
-                            />
-                            <Input
-                              value={selectedFaculty3?.id}
-                              type="hidden"
-                              name="panel3"
-                            />
-                            <Input
-                              value={"67d2918b990acc26a58cb4be"}
-                              type="hidden"
-                              name="chairperson"
-                            />
-                            <Input
-                              value={"67d29ce1990acc26a58cb53a"}
-                              type="hidden"
-                              name="adminId"
-                            />
-
-                            <Input
-                              value={selectedFaculty4?.id}
-                              type="hidden"
-                              name="panel4"
-                            />
-                            <Button
-                              disabled={
-                                selectedFaculty1 == null ||
-                                selectedFaculty2 == null ||
-                                selectedFaculty3 == null ||
-                                selectedFaculty4 == null ||
-                                startTime == "" ||
-                                endTime == "" ||
-                                dateRange.from == undefined ||
-                                dateRange.to == undefined
-                              }
-                              className="w-full cursor-pointer"
-                            >
-                              Generate Date
-                            </Button>
-
-                            <span className="text-sm text-red-500">
-                              {selectedFaculty1 == null ||
-                              selectedFaculty2 == null ||
-                              selectedFaculty3 == null ||
-                              selectedFaculty4 == null ||
-                              startTime == "" ||
-                              endTime == "" ||
-                              dateRange.from == undefined ||
-                              dateRange.to == undefined
-                                ? "Fill all panels field to generate"
-                                : ""}
-                            </span>
-
-                            <span
-                              className={`text-sm ${
-                                actionData?.message.startsWith("Available Date")
-                                  ? "text-green-500"
-                                  : "text-red-500"
-                              } `}
-                            >
-                              {actionData?.message.startsWith(
-                                "Available Date"
-                              ) &&
-                                `${actionData?.message} (${startTime} - ${endTime})`}
-                              {!actionData?.message.startsWith(
-                                "Available Date"
-                              ) && actionData?.message}
-                            </span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TabsContent>
-                  </Tabs>
-
-                  <DialogFooter>
-                    <DialogClose asChild>
-                      <Button type="button" variant="secondary">
-                        Cancel
-                      </Button>
-                    </DialogClose>
-
-                    <Form method="POST">
-                      <Input
-                        value={selectedStudent1?.id}
-                        type="hidden"
-                        name="student1"
-                      />
-                      <Input
-                        value={selectedStudent2?.id}
-                        type="hidden"
-                        name="student2"
-                      />
-                      <Input
-                        value={selectedStudent3?.id}
-                        type="hidden"
-                        name="student3"
-                      />
-                      <Input
-                        value={selectedFaculty?.id}
-                        type="hidden"
-                        name="adviser"
-                      />
-                      <Input
-                        value={`${startTime} - ${endTime}`}
-                        type="hidden"
-                        name="time"
-                      />
-
-                      <Input value={thesisType} type="hidden" name="type" />
-
-                      <Input
-                        value={selectedFaculty1?.id}
-                        type="hidden"
-                        name="panel1"
-                      />
-                      <Input
-                        value={selectedFaculty2?.id}
-                        type="hidden"
-                        name="panel2"
-                      />
-                      <Input
-                        value={selectedFaculty3?.id}
-                        type="hidden"
-                        name="panel3"
+                      <DateTimeRangePicker
+                        dateRange={dateRange}
+                        setDateRange={setDateRange}
+                        startTime={startTime}
+                        setStartTime={setStartTime}
+                        endTime={endTime}
+                        setEndTime={setEndTime}
                       />
 
                       <Input
-                        value={selectedFaculty4?.id}
+                        value={formattedDateRange}
                         type="hidden"
-                        name="panel4"
+                        name="dateRange"
                       />
-                      <Input
-                        value={thesisTitle}
-                        type="hidden"
-                        name="thesisTitle"
-                      />
-                      <Input value={venue} type="hidden" name="venue" />
-                      <Input value={schedule} type="hidden" name="date" />
+                      <Input value={startTime} type="hidden" name="startTime" />
+
+                      <Input value={endTime} type="hidden" name="endTime" />
+
                       <Button
-                        name="submit"
-                        value={"submitSchedule"}
-                        disabled={
-                          selectedStudent1 == null ||
-                          selectedStudent2 == null ||
-                          selectedStudent3 == null ||
-                          selectedFaculty == null ||
-                          selectedFaculty1 == null ||
-                          selectedFaculty2 == null ||
-                          selectedFaculty3 == null ||
-                          selectedFaculty4 == null ||
-                          thesisTitle == "" ||
-                          venue == "" ||
-                          startTime == "" ||
-                          endTime == "" ||
-                          dateRange.from == undefined ||
-                          dateRange.to == undefined
-                        }
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleSubmitDReschedule();
+                        }}
+                        className="w-full cursor-pointer"
+                        variant="secondary"
                       >
-                        {navigation.state === "submitting" ? (
-                          <>
-                            {" "}
-                            <Loader2 className="animate-spin" />
-                            Please wait
-                          </>
+                        {generateDateRescheduleLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          "Login"
+                          "Generate Date"
                         )}
                       </Button>
-                    </Form>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+
+                      {rescheduleDate &&
+                        rescheduleStartTime &&
+                        rescheduleEndTime && (
+                          <span className="text-sm text-green-500">
+                            Selected Schedule: {rescheduleDate} (
+                            {rescheduleStartTime} - {rescheduleEndTime})
+                          </span>
+                        )}
+
+                      {Array.isArray(generatedReschedule) &&
+                        generatedReschedule.length > 0 && (
+                          <div className="space-y-4">
+                            {/* First Available Schedule Card */}
+                            <Card className="dark:bg-[#303030] bg-slate-100 mt-4">
+                              <CardHeader>
+                                <CardTitle>Recommended Schedule</CardTitle>
+                                <CardDescription>
+                                  This schedule has been automatically selected
+                                </CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="flex justify-between items-center gap-4">
+                                  <div className="flex-1">
+                                    <p className="font-medium">
+                                      Date: {generatedReschedule[0].date}
+                                    </p>
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-medium">
+                                      Time: {generatedReschedule[0].time}
+                                    </p>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            {/* View More Button */}
+                            <Button
+                              onClick={() => setIsGeneratedDateDialogOpen(true)}
+                              className="w-full"
+                              variant="outline"
+                            >
+                              View and Change Schedule
+                            </Button>
+
+                            {/* Full Schedule Dialog */}
+                            <Dialog
+                              open={isGeneratedDateDialogOpen}
+                              onOpenChange={setIsGeneratedDateDialogOpen}
+                            >
+                              <DialogContent className="max-w-xl">
+                                <div
+                                  className={`alert ${
+                                    verifiedDateMessage ===
+                                    "Schedule conflict detected"
+                                      ? "bg-red-500"
+                                      : verifiedDateMessage ===
+                                        "No conflicts detected"
+                                      ? "bg-green-500"
+                                      : ""
+                                  } text-white p-4 rounded`}
+                                  style={{
+                                    display: verifiedDateMessage
+                                      ? "block"
+                                      : "none",
+                                  }}
+                                >
+                                  {verifiedDateMessage ===
+                                  "Schedule conflict detected"
+                                    ? "There is a conflict with the selected date and time."
+                                    : verifiedDateMessage ===
+                                      "No conflicts detected"
+                                    ? "The selected date and time are available."
+                                    : ""}
+                                </div>
+
+                                <DialogTitle>
+                                  All Available Schedules
+                                </DialogTitle>
+                                <DialogDescription>
+                                  View and select from all available time slots
+                                </DialogDescription>
+
+                                <div className="overflow-auto max-h-60">
+                                  <table className="w-full border-collapse">
+                                    <thead className="bg-[#303030] sticky top-0">
+                                      <tr>
+                                        <th className="border px-4 py-2">
+                                          Date
+                                        </th>
+                                        <th className="border px-4 py-2">
+                                          Time
+                                        </th>
+                                        <th className="border px-4 py-2">
+                                          Set
+                                        </th>
+                                        <th className="border px-4 py-2">
+                                          Verification
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {generatedReschedule
+                                        .slice(1)
+                                        .map((scheduleItem, index) => (
+                                          <tr key={index}>
+                                            <td className="border px-4 py-2">
+                                              {scheduleItem.date}
+                                            </td>
+                                            <td className="border px-4 py-2">
+                                              {scheduleItem.time}
+                                            </td>
+                                            <td className="border px-4 py-2">
+                                              <Button
+                                                onClick={() =>
+                                                  handleSetRescheduleDateTime(
+                                                    scheduleItem.date,
+                                                    scheduleItem.time
+                                                  )
+                                                }
+                                                variant="secondary"
+                                              >
+                                                Set
+                                              </Button>
+                                            </td>
+                                            <td className="border px-4 py-2">
+                                              <Button
+                                                onClick={() =>
+                                                  handleVerifyDateTime(
+                                                    scheduleItem.date,
+                                                    scheduleItem.time
+                                                  )
+                                                }
+                                              >
+                                                Verify
+                                              </Button>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                <DialogFooter>
+                                  <Button
+                                    onClick={() =>
+                                      setIsGeneratedDateDialogOpen(false)
+                                    }
+                                  >
+                                    Close
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </div>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button type="button" variant="secondary">
+                          Close
+                        </Button>
+                      </DialogClose>
+
+                      <Form method="PUT">
+                        <Input type="hidden" value={val._id} name="id" />
+                        <Input type="hidden" value={venue} name="venue" />
+                        <Input
+                          type="hidden"
+                          value={rescheduleDate}
+                          name="date"
+                        />
+                        <Input
+                          type="hidden"
+                          value={`${rescheduleStartTime} - ${rescheduleEndTime}`}
+                          name="time"
+                        />
+
+                        <Button
+                          name="submit"
+                          value={"reschedule"}
+                          className="cursor-pointer"
+                          variant={val.reschedule ? "destructive" : "default"}
+                          type="submit"
+                        >
+                          {val.reschedule ? (
+                            navigation.state === "submitting" ? (
+                              <h2 className="flex items-center gap-2">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                Loading
+                              </h2>
+                            ) : (
+                              "Reschedule"
+                            )
+                          ) : navigation.state === "submitting" ? (
+                            <h2 className="flex items-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Loading
+                            </h2>
+                          ) : (
+                            "Set Schedule"
+                          )}
+                        </Button>
+                      </Form>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
+              {val.forScheduleStatus === "pending" && (
+                <div className="flex items-center gap-2">
+                  <Form method="put">
+                    <Input type="hidden" name="thesisId" value={val._id} />
+                    <Input
+                      type="hidden"
+                      name="forScheduleStatus"
+                      value={"approve"}
+                    />
+                    <Button
+                      type="submit"
+                      name="submit"
+                      value="forScheduleStatusApprove"
+                      className="bg-green-500 hover:bg-green-600"
+                      size={"icon"}
+                    >
+                      <FaCheck />
+                    </Button>
+                  </Form>
+                  <Form method="put">
+                    <Input type="hidden" name="thesisId" value={val._id} />
+                    <Input
+                      type="hidden"
+                      name="forScheduleStatus"
+                      value={"reject"}
+                    />
+                    <Button
+                      type="submit"
+                      name="submit"
+                      value="forScheduleStatusReject"
+                      className="bg-red-500 hover:bg-red-600"
+                      size={"icon"}
+                    >
+                      <FaXmark />
+                    </Button>
+                  </Form>
+                </div>
+              )}
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex justify-between items-center">
               <p className="text-sm flex items-center gap-2">
                 {val?.status === "pending" ? (
                   <FaCircleMinus />
@@ -854,6 +938,13 @@ const Schedules = () => {
                   ? "Approved"
                   : "For Reschedule"}
               </p>
+
+              {val?.status === "approved" && (
+                <Button className="flex items-center gap-2">
+                  <MdMarkEmailRead />
+                  Send Email
+                </Button>
+              )}
             </CardFooter>
           </Card>
         ))}
@@ -948,21 +1039,21 @@ const Schedules = () => {
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <SearchableDropdown
-                    label="Panel 1"
+                    label="Chairperson Panel"
                     value={selectedFaculty1} // Pass the entire object
                     onValueChange={setSelectedFaculty1} // Ensure it updates correctly
                     options={faculty}
                   />
 
                   <SearchableDropdown
-                    label="Panel 2"
+                    label="Panel 1"
                     value={selectedFaculty2} // Pass the entire object
                     onValueChange={setSelectedFaculty2} // Ensure it updates correctly
                     options={faculty}
                   />
 
                   <SearchableDropdown
-                    label="Panel 3"
+                    label="Panel 2"
                     value={selectedFaculty3} // Pass the entire object
                     onValueChange={setSelectedFaculty3} // Ensure it updates correctly
                     options={faculty}
@@ -1090,8 +1181,6 @@ const Schedules = () => {
                         selectedFaculty2 == null ||
                         selectedFaculty3 == null ||
                         selectedFaculty4 == null ||
-                        startTime == "" ||
-                        endTime == "" ||
                         dateRange.from == undefined ||
                         dateRange.to == undefined
                       }
@@ -1104,31 +1193,157 @@ const Schedules = () => {
                       )}
                     </Button>
 
+                    {schedule && startTime && endTime && (
+                      <span className="text-sm text-green-500">
+                        Selected Schedule: {schedule} ({startTime} - {endTime})
+                      </span>
+                    )}
+
                     <span className="text-sm text-red-500">
                       {selectedFaculty1 == null ||
                       selectedFaculty2 == null ||
                       selectedFaculty3 == null ||
                       selectedFaculty4 == null ||
-                      startTime == "" ||
-                      endTime == "" ||
                       dateRange.from == undefined ||
                       dateRange.to == undefined
                         ? "Fill all panels field to generate"
                         : ""}
                     </span>
 
-                    <span
-                      className={`text-sm ${
-                        generatedSchedule.startsWith("Available Date")
-                          ? "text-green-500"
-                          : "text-red-500"
-                      } `}
-                    >
-                      {generatedSchedule.startsWith("Available Date") &&
-                        `${generatedSchedule} (${startTime} - ${endTime})`}
-                      {!generatedSchedule.startsWith("Available Date") &&
-                        generatedSchedule}
-                    </span>
+                    {Array.isArray(generatedSchedule) &&
+                      generatedSchedule.length > 0 && (
+                        <div className="space-y-4">
+                          {/* First Available Schedule Card */}
+                          <Card>
+                            <CardHeader>
+                              <CardTitle>Selected Schedule</CardTitle>
+                              <CardDescription>
+                                This schedule has been automatically selected
+                              </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-2">
+                                <p className="font-medium">
+                                  Date: {generatedSchedule[0].date}
+                                </p>
+                                <p className="font-medium">
+                                  Time: {generatedSchedule[0].time}
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* View More Button */}
+                          <Button
+                            onClick={() => setIsGeneratedDateDialogOpen(true)}
+                            className="w-full"
+                            variant="outline"
+                          >
+                            View and Change Schedule
+                          </Button>
+
+                          {/* Full Schedule Dialog */}
+                          <Dialog
+                            open={isGeneratedDateDialogOpen}
+                            onOpenChange={setIsGeneratedDateDialogOpen}
+                          >
+                            <DialogContent className="max-w-xl">
+                              <div
+                                className={`alert ${
+                                  verifiedDateMessage ===
+                                  "Schedule conflict detected"
+                                    ? "bg-red-500"
+                                    : verifiedDateMessage ===
+                                      "No conflicts detected"
+                                    ? "bg-green-500"
+                                    : ""
+                                } text-white p-4 rounded`}
+                                style={{
+                                  display: verifiedDateMessage
+                                    ? "block"
+                                    : "none",
+                                }}
+                              >
+                                {verifiedDateMessage ===
+                                "Schedule conflict detected"
+                                  ? "There is a conflict with the selected date and time."
+                                  : verifiedDateMessage ===
+                                    "No conflicts detected"
+                                  ? "The selected date and time are available."
+                                  : ""}
+                              </div>
+
+                              <DialogTitle>All Available Schedules</DialogTitle>
+                              <DialogDescription>
+                                View and select from all available time slots
+                              </DialogDescription>
+
+                              <div className="overflow-auto max-h-60">
+                                <table className="w-full border-collapse">
+                                  <thead className="bg-[#303030] sticky top-0">
+                                    <tr>
+                                      <th className="border px-4 py-2">Date</th>
+                                      <th className="border px-4 py-2">Time</th>
+                                      <th className="border px-4 py-2">Set</th>
+                                      <th className="border px-4 py-2">
+                                        Verification
+                                      </th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {generatedSchedule
+                                      .slice(1)
+                                      .map((scheduleItem, index) => (
+                                        <tr key={index}>
+                                          <td className="border px-4 py-2">
+                                            {scheduleItem.date}
+                                          </td>
+                                          <td className="border px-4 py-2">
+                                            {scheduleItem.time}
+                                          </td>
+                                          <td className="border px-4 py-2">
+                                            <Button
+                                              onClick={() =>
+                                                handleSetDateTime(
+                                                  scheduleItem.date,
+                                                  scheduleItem.time
+                                                )
+                                              }
+                                              variant="secondary"
+                                            >
+                                              Set
+                                            </Button>
+                                          </td>
+                                          <td className="border px-4 py-2">
+                                            <Button
+                                              onClick={() =>
+                                                handleVerifyDateTime(
+                                                  scheduleItem.date,
+                                                  scheduleItem.time
+                                                )
+                                              }
+                                            >
+                                              Verify
+                                            </Button>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                              <DialogFooter>
+                                <Button
+                                  onClick={() =>
+                                    setIsGeneratedDateDialogOpen(false)
+                                  }
+                                >
+                                  Close
+                                </Button>
+                              </DialogFooter>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      )}
                   </div>
                 </CardContent>
               </Card>
@@ -1228,7 +1443,7 @@ const Schedules = () => {
                     }
                   >
                     {navigation.state === "submitting" ? (
-                      <h2>
+                      <h2 className="flex items-center gap-2">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         Adding Schedule
                       </h2>

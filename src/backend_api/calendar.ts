@@ -1,11 +1,8 @@
 import axios from "axios";
-
+const baseAPI = import.meta.env.VITE_BACKEND_API_ENDPOINT;
 export async function addNewSchedule(data: any) {
   try {
-    const response = await axios.post(
-      "http://localhost:5000/api/schedules",
-      data
-    );
+    const response = await axios.post(`${baseAPI}/schedules`, data);
 
     return response;
   } catch (error) {

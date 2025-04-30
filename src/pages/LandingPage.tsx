@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 
 import { Form, useLoaderData, ActionFunction } from "react-router-dom";
-import { getThesisDocuments } from "@/backend_api/thesisDocument";
+import { getApprovedThesisDocuments } from "@/backend_api/thesisDocument";
 import {
   addFavorites,
   getUserFavorites,
@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 export const loader = async () => {
   const user = localStorage.getItem("user");
   const userData: any = JSON.parse(user as any);
-  const thesisDocuments = await getThesisDocuments();
+  const thesisDocuments = await getApprovedThesisDocuments();
   const favorites = await getUserFavorites(userData.id);
   return { userData, thesisDocuments, favorites };
 };
