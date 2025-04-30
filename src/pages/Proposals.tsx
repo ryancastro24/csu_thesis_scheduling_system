@@ -56,7 +56,7 @@ export const action: ActionFunction = async ({ request }) => {
   }
 };
 const Proposals = () => {
-  const { userData, adviserAcceptanaceData } = useLoaderData();
+  const { adviserAcceptanaceData } = useLoaderData();
   return (
     <div className="grid grid-cols-3 gap-5">
       {adviserAcceptanaceData.map((val: any) => (
