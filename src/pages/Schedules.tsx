@@ -23,11 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+
 import { Search } from "lucide-react";
 import {
   Dialog,
@@ -40,7 +36,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { FaEye } from "react-icons/fa";
 import { FaTrash } from "react-icons/fa";
 import { FaXmark } from "react-icons/fa6";
@@ -48,13 +44,6 @@ import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaCircleMinus, FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import { FaCalendarDays } from "react-icons/fa6";
 import { MdMarkEmailRead } from "react-icons/md";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandGroup,
-  CommandItem,
-} from "@/components/ui/command";
 
 type Venues = {
   label: string;
@@ -132,25 +121,23 @@ export async function loader() {
 
 const ITEMS_PER_PAGE = 6;
 const Schedules = () => {
-  const { students, faculty, thesisSchedules, userData } = useLoaderData();
-  const [generateDateLoading, setGenerateDateLoading] = useState(false);
+  const { thesisSchedules, userData } = useLoaderData();
+
   const [generateDateRescheduleLoading, setGenerateDateRescheduleLoading] =
     useState(false);
   const [isGeneratedDateDialogOpen, setIsGeneratedDateDialogOpen] =
     useState(true);
   const navigation = useNavigation();
-  const [generatedSchedule, setGeneratedSchedule] = useState<
-    Array<{ date: string; time: string }>
-  >([]);
+
   const [generatedReschedule, setGeneratedRescheduleUpdate] = useState<
     Array<{ date: string; time: string }>
   >([]);
-  const [schedule, setSchedule] = useState("");
+
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleStartTime, setRescheduleStartTime] = useState("");
   const [rescheduleEndTime, setRescheduleEndTime] = useState("");
   const [, setOpenThesisModal] = useState(false);
-  const [, setSelectedFile] = useState<File | null>(null);
+
   const [selectedThesis, setSelectedThesis] = useState<any | null>(null);
   const [verifiedDateMessage, setVerifiedDateMessage] = useState("");
 
@@ -164,53 +151,22 @@ const Schedules = () => {
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      setSelectedFile(file); // Store the binary file directly
-
-      console.log(file);
-    }
-  };
-
-  const [thesisType, setThesisType] = useState("");
-
-  const [selectedFaculty, setSelectedFaculty] = useState<{
+  const [selectedFaculty1] = useState<{
     id: string;
     name: string;
   } | null>(null);
 
-  const [selectedFaculty1, setSelectedFaculty1] = useState<{
+  const [selectedFaculty2] = useState<{
     id: string;
     name: string;
   } | null>(null);
 
-  const [selectedFaculty2, setSelectedFaculty2] = useState<{
+  const [selectedFaculty3] = useState<{
     id: string;
     name: string;
   } | null>(null);
 
-  const [selectedFaculty3, setSelectedFaculty3] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-
-  const [selectedFaculty4, setSelectedFaculty4] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-
-  const [selectedStudent1, setSelectedStudent1] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-
-  const [selectedStudent2, setSelectedStudent2] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-
-  const [selectedStudent3, setSelectedStudent3] = useState<{
+  const [selectedFaculty4] = useState<{
     id: string;
     name: string;
   } | null>(null);
@@ -219,43 +175,6 @@ const Schedules = () => {
     from: undefined,
     to: undefined,
   });
-
-  const handleSubmit = async () => {
-    setGenerateDateLoading(true);
-
-    console.log(selectedFaculty1);
-    const data = {
-      panel1: selectedFaculty1?.id,
-      panel2: selectedFaculty2?.id,
-      panel3: selectedFaculty3?.id,
-      panel4: selectedFaculty4?.id,
-      startTime,
-      endTime,
-      dateRange: formattedDateRange,
-      chairperson: userData.id,
-      adminId: "67ff1871d66d128fd30735db",
-    };
-
-    try {
-      const response = await axios.post(
-        `${baseAPI}/schedules/generateThesisSchedule/data`,
-        data
-      );
-
-      const scheduleData = response.data?.data || [];
-      setGeneratedSchedule(scheduleData);
-      // Automatically set the first schedule
-      if (scheduleData.length > 0) {
-        const firstSchedule = scheduleData[0];
-        handleSetDateTime(firstSchedule.date, firstSchedule.time);
-      }
-      setGenerateDateLoading(false);
-      return response.data;
-    } catch (error) {
-      console.error("Error adding department:", error);
-      throw error;
-    }
-  };
 
   const handleSubmitDReschedule = async () => {
     setGenerateDateRescheduleLoading(true);
@@ -321,14 +240,6 @@ const Schedules = () => {
     }
   };
 
-  const handleSetDateTime = (date: string, time: string) => {
-    setSchedule(date);
-    const revisedTime = time.split(" - ");
-    setStartTime(revisedTime[0]);
-    setEndTime(revisedTime[1]);
-    setIsGeneratedDateDialogOpen(false);
-  };
-
   const handleSetRescheduleDateTime = (date: string, time: string) => {
     setRescheduleDate(date);
     const revisedTime = time.split(" - ");
@@ -336,8 +247,6 @@ const Schedules = () => {
     setRescheduleEndTime(revisedTime[1]);
     setIsGeneratedDateDialogOpen(false);
   };
-
-  const [thesisTitle, setThesisTitle] = useState("");
   const [venue, setVenue] = useState("");
 
   const formattedDateRange =
@@ -354,12 +263,8 @@ const Schedules = () => {
   console.log(startTime);
   console.log(endTime);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
 
-  const handleDialogClose = () => {
-    setIsDialogOpen(false);
-  };
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Filter schedules based on search query
   const filteredSchedules = thesisSchedules.filter((val: any) =>
@@ -406,7 +311,6 @@ const Schedules = () => {
             className="w-full pl-10"
           />
         </div>
-        <Button onClick={() => setIsDialogOpen(true)}>Add Schedule</Button>
       </div>
 
       {/* Schedules Grid */}
@@ -460,12 +364,12 @@ const Schedules = () => {
                             {val?.students.map(
                               (student: any, index: number) => {
                                 // Extract the full name (handle optional middlename and suffix)
-                                const fullName = `${student.firstname} ${
-                                  student.middlename
+                                const fullName = `${student?.firstname} ${
+                                  student?.middlename
                                     ? student.middlename + " "
                                     : ""
-                                }${student.lastname}${
-                                  student.suffix ? " " + student.suffix : ""
+                                }${student?.lastname}${
+                                  student?.suffix ? " " + student?.suffix : ""
                                 }`;
 
                                 return (
@@ -484,12 +388,12 @@ const Schedules = () => {
                         <div className="mt-2">
                           <h2>Adviser</h2>
                           <span className="text-sm opacity-50">
-                            {val?.adviser.firstname}
+                            {val?.adviser?.firstname}
                             {val?.adviser.middlename
-                              ? val?.adviser.middlename + " "
+                              ? val?.adviser?.middlename + " "
                               : ""}
-                            {val?.adviser.lastname}
-                            {val?.adviser.suffix
+                            {val?.adviser?.lastname}
+                            {val?.adviser?.suffix
                               ? " " + val?.adviser.suffix
                               : ""}
                           </span>
@@ -502,10 +406,10 @@ const Schedules = () => {
                         <ol>
                           {val?.panels.map((panel: any, index: number) => {
                             // Extract the full name (handle optional middlename and suffix)
-                            const fullName = `${panel.firstname} ${
-                              panel.middlename ? panel.middlename + " " : ""
-                            }${panel.lastname}${
-                              panel.suffix ? " " + panel.suffix : ""
+                            const fullName = `${panel?.firstname} ${
+                              panel?.middlename ? panel?.middlename + " " : ""
+                            }${panel?.lastname}${
+                              panel?.suffix ? " " + panel?.suffix : ""
                             }`;
 
                             return (
@@ -975,559 +879,8 @@ const Schedules = () => {
       </div>
 
       {/* Add Schedule Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Schedule</DialogTitle>
-          </DialogHeader>
-
-          <Tabs defaultValue="students" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="students">Students</TabsTrigger>
-              <TabsTrigger value="panels">Panels</TabsTrigger>
-              <TabsTrigger value="schedule">Schedule</TabsTrigger>
-            </TabsList>
-
-            {/* Students Tab */}
-            <TabsContent value="students">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Student Details</CardTitle>
-                  <CardDescription>
-                    Select student members of the thesis.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <SearchableDropdown
-                    label="Student 1"
-                    options={students}
-                    value={selectedStudent1} // Pass the entire object
-                    onValueChange={setSelectedStudent1} // Ensure it updates correctly
-                  />
-
-                  <SearchableDropdown
-                    label="Student 2"
-                    options={students}
-                    value={selectedStudent2} // Pass the entire object
-                    onValueChange={setSelectedStudent2} // Ensure it updates correctly
-                  />
-                  <SearchableDropdown
-                    label="Student 3"
-                    value={selectedStudent3} // Pass the entire object
-                    onValueChange={setSelectedStudent3} // Ensure it updates correctly
-                    options={students}
-                  />
-
-                  <SearchableDropdown
-                    label="Adviser"
-                    value={selectedFaculty} // Pass the entire object
-                    onValueChange={setSelectedFaculty} // Ensure it updates correctly
-                    options={faculty}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Panels Tab */}
-            <TabsContent value="panels">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Panel Members</CardTitle>
-                  <CardDescription>
-                    Enter details of panel members for thesis evaluation.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <SearchableDropdown
-                    label="Chairperson Panel"
-                    value={selectedFaculty1} // Pass the entire object
-                    onValueChange={setSelectedFaculty1} // Ensure it updates correctly
-                    options={faculty}
-                  />
-
-                  <SearchableDropdown
-                    label="Panel 1"
-                    value={selectedFaculty2} // Pass the entire object
-                    onValueChange={setSelectedFaculty2} // Ensure it updates correctly
-                    options={faculty}
-                  />
-
-                  <SearchableDropdown
-                    label="Panel 2"
-                    value={selectedFaculty3} // Pass the entire object
-                    onValueChange={setSelectedFaculty3} // Ensure it updates correctly
-                    options={faculty}
-                  />
-
-                  <SearchableDropdown
-                    label="Oral Adviser"
-                    value={selectedFaculty4} // Pass the entire object
-                    onValueChange={setSelectedFaculty4} // Ensure it updates correctly
-                    options={faculty}
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Schedule Tab */}
-            <TabsContent value="schedule">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Thesis Defense Schedule</CardTitle>
-                  <CardDescription>
-                    Select venue and generate date for the thesis defense.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="space-y-1">
-                    <Label>Thesis Title</Label>
-                    <Input
-                      value={thesisTitle}
-                      onChange={(e) => setThesisTitle(e.target.value)}
-                      type="text"
-                      placeholder="Enter thesis title"
-                    />
-                  </div>
-                  <div className="flex space-x-4">
-                    <div className="space-y-1 w-full">
-                      <Label>Venue</Label>
-                      <Select value={venue} onValueChange={setVenue}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select Venue" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {venueOptions.map((val) => (
-                            <SelectItem key={val.label} value={val.value}>
-                              {val.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1 w-full">
-                      <Label>Type</Label>
-                      <Select value={thesisType} onValueChange={setThesisType}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select Thesis Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={"proposal"}>Proposal</SelectItem>
-                          <SelectItem value={"final"}>Final</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <Label>Schedule Date</Label>
-
-                    <DateTimeRangePicker
-                      dateRange={dateRange}
-                      setDateRange={setDateRange}
-                      startTime={startTime}
-                      setStartTime={setStartTime}
-                      endTime={endTime}
-                      setEndTime={setEndTime}
-                    />
-
-                    <Input
-                      value={formattedDateRange}
-                      type="hidden"
-                      name="dateRange"
-                    />
-
-                    <Input value={startTime} type="hidden" name="startTime" />
-
-                    <Input value={endTime} type="hidden" name="endTime" />
-                    <Input
-                      value={selectedFaculty2?.id}
-                      type="hidden"
-                      name="panel2"
-                    />
-                    <Input
-                      value={selectedFaculty1?.id}
-                      type="hidden"
-                      name="panel1"
-                    />
-
-                    <Input
-                      value={selectedFaculty3?.id}
-                      type="hidden"
-                      name="panel3"
-                    />
-                    <Input
-                      value={"67d2918b990acc26a58cb4be"}
-                      type="hidden"
-                      name="chairperson"
-                    />
-                    <Input
-                      value={"67d29ce1990acc26a58cb53a"}
-                      type="hidden"
-                      name="adminId"
-                    />
-
-                    <Input
-                      value={selectedFaculty4?.id}
-                      type="hidden"
-                      name="panel4"
-                    />
-                    <Button
-                      onClick={(event) => {
-                        event.preventDefault();
-                        handleSubmit();
-                      }}
-                      disabled={
-                        selectedFaculty1 == null ||
-                        selectedFaculty2 == null ||
-                        selectedFaculty3 == null ||
-                        selectedFaculty4 == null ||
-                        dateRange.from == undefined ||
-                        dateRange.to == undefined
-                      }
-                      className="w-full cursor-pointer"
-                    >
-                      {generateDateLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        "Generate Date"
-                      )}
-                    </Button>
-
-                    {schedule && startTime && endTime && (
-                      <span className="text-sm text-green-500">
-                        Selected Schedule: {schedule} ({startTime} - {endTime})
-                      </span>
-                    )}
-
-                    <span className="text-sm text-red-500">
-                      {selectedFaculty1 == null ||
-                      selectedFaculty2 == null ||
-                      selectedFaculty3 == null ||
-                      selectedFaculty4 == null ||
-                      dateRange.from == undefined ||
-                      dateRange.to == undefined
-                        ? "Fill all panels field to generate"
-                        : ""}
-                    </span>
-
-                    {Array.isArray(generatedSchedule) &&
-                      generatedSchedule.length > 0 && (
-                        <div className="space-y-4">
-                          {/* First Available Schedule Card */}
-                          <Card>
-                            <CardHeader>
-                              <CardTitle>Selected Schedule</CardTitle>
-                              <CardDescription>
-                                This schedule has been automatically selected
-                              </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="space-y-2">
-                                <p className="font-medium">
-                                  Date: {generatedSchedule[0].date}
-                                </p>
-                                <p className="font-medium">
-                                  Time: {generatedSchedule[0].time}
-                                </p>
-                              </div>
-                            </CardContent>
-                          </Card>
-
-                          {/* View More Button */}
-                          <Button
-                            onClick={() => setIsGeneratedDateDialogOpen(true)}
-                            className="w-full"
-                            variant="outline"
-                          >
-                            View and Change Schedule
-                          </Button>
-
-                          {/* Full Schedule Dialog */}
-                          <Dialog
-                            open={isGeneratedDateDialogOpen}
-                            onOpenChange={setIsGeneratedDateDialogOpen}
-                          >
-                            <DialogContent className="max-w-xl">
-                              <div
-                                className={`alert ${
-                                  verifiedDateMessage ===
-                                  "Schedule conflict detected"
-                                    ? "bg-red-500"
-                                    : verifiedDateMessage ===
-                                      "No conflicts detected"
-                                    ? "bg-green-500"
-                                    : ""
-                                } text-white p-4 rounded`}
-                                style={{
-                                  display: verifiedDateMessage
-                                    ? "block"
-                                    : "none",
-                                }}
-                              >
-                                {verifiedDateMessage ===
-                                "Schedule conflict detected"
-                                  ? "There is a conflict with the selected date and time."
-                                  : verifiedDateMessage ===
-                                    "No conflicts detected"
-                                  ? "The selected date and time are available."
-                                  : ""}
-                              </div>
-
-                              <DialogTitle>All Available Schedules</DialogTitle>
-                              <DialogDescription>
-                                View and select from all available time slots
-                              </DialogDescription>
-
-                              <div className="overflow-auto max-h-60">
-                                <table className="w-full border-collapse">
-                                  <thead className="bg-[#303030] sticky top-0">
-                                    <tr>
-                                      <th className="border px-4 py-2">Date</th>
-                                      <th className="border px-4 py-2">Time</th>
-                                      <th className="border px-4 py-2">Set</th>
-                                      <th className="border px-4 py-2">
-                                        Verification
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {generatedSchedule
-                                      .slice(1)
-                                      .map((scheduleItem, index) => (
-                                        <tr key={index}>
-                                          <td className="border px-4 py-2">
-                                            {scheduleItem.date}
-                                          </td>
-                                          <td className="border px-4 py-2">
-                                            {scheduleItem.time}
-                                          </td>
-                                          <td className="border px-4 py-2">
-                                            <Button
-                                              onClick={() =>
-                                                handleSetDateTime(
-                                                  scheduleItem.date,
-                                                  scheduleItem.time
-                                                )
-                                              }
-                                              variant="secondary"
-                                            >
-                                              Set
-                                            </Button>
-                                          </td>
-                                          <td className="border px-4 py-2">
-                                            <Button
-                                              onClick={() =>
-                                                handleVerifyDateTime(
-                                                  scheduleItem.date,
-                                                  scheduleItem.time
-                                                )
-                                              }
-                                            >
-                                              Verify
-                                            </Button>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                  </tbody>
-                                </table>
-                              </div>
-                              <DialogFooter>
-                                <Button
-                                  onClick={() =>
-                                    setIsGeneratedDateDialogOpen(false)
-                                  }
-                                >
-                                  Close
-                                </Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      )}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter>
-            <Form method="POST" encType="multipart/form-data">
-              <div className="w-full flex justify-between items-center gap-10">
-                <div className="flex flex-col mb-4">
-                  <label htmlFor="file" className="mb-1">
-                    Upload File
-                  </label>
-                  <Input
-                    id="file"
-                    type="file"
-                    name="file"
-                    onChange={handleFileChange}
-                    accept=".pdf" // Specify accepted file types
-                  />
-                </div>
-                <Input
-                  value={selectedStudent1?.id}
-                  type="hidden"
-                  name="student1"
-                />
-                <Input
-                  value={selectedStudent2?.id}
-                  type="hidden"
-                  name="student2"
-                />
-                <Input
-                  value={selectedStudent3?.id}
-                  type="hidden"
-                  name="student3"
-                />
-                <Input
-                  value={`${startTime} - ${endTime}`}
-                  type="hidden"
-                  name="time"
-                />
-                <Input value={thesisType} type="hidden" name="type" />
-                <Input
-                  value={selectedFaculty1?.id}
-                  type="hidden"
-                  name="panel1"
-                />
-                <Input
-                  value={selectedFaculty2?.id}
-                  type="hidden"
-                  name="panel2"
-                />
-                <Input
-                  value={selectedFaculty3?.id}
-                  type="hidden"
-                  name="panel3"
-                />
-                <Input
-                  value={selectedFaculty4?.id}
-                  type="hidden"
-                  name="panel4"
-                />
-                <Input
-                  value={selectedFaculty?.id}
-                  type="hidden"
-                  name="adviser"
-                />
-                <Input value={thesisTitle} type="hidden" name="thesisTitle" />
-                <Input value={venue} type="hidden" name="venue" />
-                <Input value={schedule} type="hidden" name="date" />
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={handleDialogClose}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    name="submit"
-                    value={"submitSchedule"}
-                    disabled={
-                      selectedStudent1 == null ||
-                      selectedStudent2 == null ||
-                      selectedStudent3 == null ||
-                      selectedFaculty == null ||
-                      selectedFaculty1 == null ||
-                      selectedFaculty2 == null ||
-                      selectedFaculty3 == null ||
-                      selectedFaculty4 == null ||
-                      thesisTitle == "" ||
-                      venue == "" ||
-                      startTime == "" ||
-                      endTime == "" ||
-                      dateRange.from == undefined ||
-                      dateRange.to == undefined
-                    }
-                  >
-                    {navigation.state === "submitting" ? (
-                      <h2 className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Adding Schedule
-                      </h2>
-                    ) : (
-                      "Add Schedule"
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </Form>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
 
 export default Schedules;
-
-interface SearchableDropdownProps {
-  label: string;
-  options: {
-    _id: string;
-    firstname: string;
-    middlename?: string;
-    lastname: string;
-    suffix?: string;
-  }[];
-
-  value: { id: string; name: string } | null; // Expect an object, not a string
-  onValueChange: (value: { id: string; name: string }) => void;
-}
-
-function SearchableDropdown({
-  label,
-  options,
-
-  value,
-  onValueChange,
-}: SearchableDropdownProps) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="space-y-1">
-      <Label>{label}</Label>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="w-full justify-between">
-            {value ? value.name : `Select ${label}`}{" "}
-            {/* Ensure the name is displayed */}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-full p-0">
-          <Command>
-            <CommandInput placeholder={`Search ${label}`} />
-            <CommandList>
-              <CommandGroup>
-                {options.map((option) => {
-                  const fullName = `${option.firstname} ${
-                    option.middlename ? option.middlename[0] + "." : ""
-                  } ${option.lastname} ${option.suffix ?? ""}`.trim();
-                  return (
-                    <CommandItem
-                      key={option._id}
-                      onSelect={() => {
-                        const selectedValue = {
-                          id: option._id,
-                          name: fullName,
-                        };
-                        onValueChange(selectedValue); // Persist selection
-
-                        setOpen(false);
-                      }}
-                      className="cursor-pointer"
-                    >
-                      {fullName}
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-}

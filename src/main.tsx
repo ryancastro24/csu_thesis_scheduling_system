@@ -127,6 +127,7 @@ const router = createBrowserRouter([
         element: <MyStudent />,
         loader: MyStudentLoader,
         action: MyStudentAction,
+        children: [],
       },
       {
         path: "advisees",

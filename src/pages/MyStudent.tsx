@@ -60,6 +60,7 @@ const ITEMS_PER_PAGE = 6;
 const MyStudent: React.FC = () => {
   const { approvedThesisDocuments, userData } = useLoaderData();
   const navigation = useNavigation();
+
   const [remarks, setRemarks] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
