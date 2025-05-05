@@ -34,7 +34,6 @@ export const loader = async () => {
   const user = localStorage.getItem("user");
 
   const userData: any = JSON.parse(user as any);
-
   const schedules = await getUserSchedules(userData.id);
 
   return { userData, schedules }; // Proceed if authenticated
@@ -164,6 +163,7 @@ export default function Calendar() {
 
             <div className="grid grid-cols-2 gap-4">
               {/* Start Time Picker */}
+              {/* Start Time Picker */}
               <div className="flex flex-col gap-2">
                 <Label>Start Time</Label>
                 <Popover>
@@ -176,9 +176,10 @@ export default function Calendar() {
                       <Clock className="ml-2 h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-4 space-y-4">
+                  <PopoverContent className="w-64 p-4 space-y-4  dark:text-black">
                     <Input
                       type="time"
+                      className="dark:bg-white dark:border-gray-600  dark:text-black"
                       value={convertTo24HourFormat(startTime)}
                       onChange={(e) =>
                         setStartTime(formatTimeTo12Hour(e.target.value))
@@ -201,9 +202,10 @@ export default function Calendar() {
                       <Clock className="ml-2 h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-64 p-4 space-y-4">
+                  <PopoverContent className="w-64 p-4 space-y-4  dark:text-black">
                     <Input
                       type="time"
+                      className="dark:bg-white dark:border-gray-600  dark:text-black"
                       value={convertTo24HourFormat(endTime)}
                       onChange={(e) =>
                         setEndTime(formatTimeTo12Hour(e.target.value))
@@ -230,7 +232,12 @@ export default function Calendar() {
               />
               <Input name="userId" value={userData.id} type="hidden" />
               <Button
-                disabled={navigation.state === "submitting"}
+                disabled={
+                  navigation.state === "submitting" ||
+                  selectedEvent.eventType === "" ||
+                  startTime === "" ||
+                  endTime === ""
+                }
                 className="cursor-pointer"
                 type="submit"
               >
@@ -262,6 +269,7 @@ export default function Calendar() {
             <div className="flex flex-col gap-2">
               <Label htmlFor="updateEventType">Event Type</Label>
               <input
+                required
                 id="updateEventType"
                 defaultValue={selectedEvent.eventType}
                 onChange={(e) =>
@@ -291,6 +299,7 @@ export default function Calendar() {
                   </PopoverTrigger>
                   <PopoverContent className="w-64 p-4 space-y-4">
                     <Input
+                      required
                       type="time"
                       value={convertTo24HourFormat(startTime)}
                       onChange={(e) =>
@@ -316,6 +325,7 @@ export default function Calendar() {
                   </PopoverTrigger>
                   <PopoverContent className="w-64 p-4 space-y-4">
                     <Input
+                      required
                       type="time"
                       value={convertTo24HourFormat(endTime)}
                       onChange={(e) =>
@@ -347,7 +357,12 @@ export default function Calendar() {
               />
               <Input name="id" value={eventToUpdate || ""} type="hidden" />
               <Button
-                disabled={navigation.state === "submitting"}
+                disabled={
+                  navigation.state === "submitting" ||
+                  selectedEvent.eventType === "" ||
+                  startTime === "" ||
+                  endTime === ""
+                }
                 className="cursor-pointer"
                 type="submit"
               >

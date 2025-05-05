@@ -1,7 +1,5 @@
 import { useState, ChangeEvent, useEffect, useRef } from "react";
-import ProfilePieChart from "@/systemComponents/ProfilePieChart";
 import { toast } from "sonner";
-import { ProfileBarChart } from "@/systemComponents/ProfileBarChart";
 import { RiEdit2Fill, RiEyeFill, RiEyeOffFill } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -144,9 +142,33 @@ const ManageProfile = () => {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-2 gap-10 pb-10">
-        <ProfilePieChart />
-        <ProfileBarChart />
+      <div className="flex  flex-col gap-10">
+        <h2>Profile Details</h2>
+
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-10">
+            <span className="text-sm ">
+              <strong>Id Number: </strong> {userData.id_number}
+            </span>
+          </div>
+          <div className="flex items-center gap-10">
+            <span className="text-sm ">
+              <strong>Department Code: </strong> {userData.departmentAcronym}
+            </span>
+          </div>
+          <div className="flex items-center gap-10">
+            <span className="text-smt">
+              <strong>Department: </strong> {userData.departmentName}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-10">
+            <span className="text-sm ">
+              <strong>Role: </strong>
+              {userData.userType}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Edit Profile Dialog */}
