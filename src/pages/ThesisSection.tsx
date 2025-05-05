@@ -44,7 +44,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
+import { Loader2 } from "lucide-react";
 import { getStudents, getfaculty, getChairpersons } from "@/backend_api/users";
 import { useLoaderData } from "react-router-dom";
 import { Form, ActionFunction, useNavigation } from "react-router-dom";
@@ -325,13 +325,20 @@ const ThesisSection = () => {
                     </Card>
                     <DialogFooter>
                       <Button
+                        disabled={navigation.state === "submitting"}
                         name="transaction"
                         value={"adviserApproval"}
                         type="submit"
+                        className="mt-4"
                       >
-                        {navigation.state === "submitting"
-                          ? "Loading..."
-                          : " Request for approval"}
+                        {navigation.state === "submitting" ? (
+                          <>
+                            <Loader2 className="animate-spin" />
+                            Please wait
+                          </>
+                        ) : (
+                          "Request for approval"
+                        )}
                       </Button>
                     </DialogFooter>
                   </Form>
@@ -512,11 +519,20 @@ const ThesisSection = () => {
                     </Card>
                     <DialogFooter>
                       <Button
+                        disabled={navigation.state === "submitting"}
                         name="transaction"
                         value={"panelApproval"}
                         type="submit"
+                        className="mt-4"
                       >
-                        Send Requests
+                        {navigation.state === "submitting" ? (
+                          <>
+                            <Loader2 className="animate-spin" />
+                            Please wait
+                          </>
+                        ) : (
+                          "Request for approvals"
+                        )}
                       </Button>
                     </DialogFooter>
                   </Form>

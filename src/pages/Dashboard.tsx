@@ -239,7 +239,7 @@ const Dashboard = () => {
               </li>
             )}
 
-            {userData.userType === "faculty" && (
+            {["chairperson", "faculty"].includes(userData.userType) && (
               <>
                 <li
                   onClick={() => navigate("/dashboard/students")}
@@ -296,37 +296,35 @@ const Dashboard = () => {
                     </Badge>
                   )}
                 </li>
-              </>
-            )}
 
-            {userData.userType === "faculty" && (
-              <li
-                onClick={() => navigate("/dashboard/proposals")}
-                className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 relative ${
-                  location.pathname === "/dashboard/proposals"
-                    ? "bg-orange-500 text-white"
-                    : ""
-                }`}
-              >
-                <span className="text-lg">
-                  <FaCodePullRequest />
-                </span>
-                Proposals
-                {adviserAcceptanaceData?.filter(
-                  (acceptance: any) => acceptance.status === "pending"
-                ).length > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-2 -right-2"
-                  >
-                    {
-                      adviserAcceptanaceData.filter(
-                        (acceptance: any) => acceptance.status === "pending"
-                      ).length
-                    }
-                  </Badge>
-                )}
-              </li>
+                <li
+                  onClick={() => navigate("/dashboard/proposals")}
+                  className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 relative ${
+                    location.pathname === "/dashboard/proposals"
+                      ? "bg-orange-500 text-white"
+                      : ""
+                  }`}
+                >
+                  <span className="text-lg">
+                    <FaCodePullRequest />
+                  </span>
+                  Proposals
+                  {adviserAcceptanaceData?.filter(
+                    (acceptance: any) => acceptance.status === "pending"
+                  ).length > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute -top-2 -right-2"
+                    >
+                      {
+                        adviserAcceptanaceData.filter(
+                          (acceptance: any) => acceptance.status === "pending"
+                        ).length
+                      }
+                    </Badge>
+                  )}
+                </li>
+              </>
             )}
 
             {["chairperson", "admin"].includes(userData.userType) && (

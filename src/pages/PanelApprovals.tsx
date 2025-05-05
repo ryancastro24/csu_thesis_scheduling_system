@@ -95,7 +95,7 @@ const PanelApprovals = () => {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Sure jud ka?</AlertDialogTitle>
+                      <AlertDialogTitle>Reject request</AlertDialogTitle>
                       <AlertDialogDescription>
                         Please type in the reason why you reject this proposal
                       </AlertDialogDescription>
