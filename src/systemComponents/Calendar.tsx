@@ -232,19 +232,18 @@ export default function Calendar() {
               />
               <Input name="userId" value={userData.id} type="hidden" />
               <Button
+                type="submit"
                 disabled={
                   navigation.state === "submitting" ||
-                  selectedEvent.eventType === "" ||
-                  startTime === "" ||
-                  endTime === ""
+                  eventType == "" ||
+                  startTime == "" ||
+                  endTime == ""
                 }
                 className="cursor-pointer"
-                type="submit"
               >
                 {navigation.state === "submitting" ? (
                   <>
-                    {" "}
-                    <Loader2 className="animate-spin" />
+                    <Loader2 className="animate-spin mr-2" />
                     Please wait
                   </>
                 ) : (
@@ -359,7 +358,7 @@ export default function Calendar() {
               <Button
                 disabled={
                   navigation.state === "submitting" ||
-                  selectedEvent.eventType === "" ||
+                  eventType === "" ||
                   startTime === "" ||
                   endTime === ""
                 }
