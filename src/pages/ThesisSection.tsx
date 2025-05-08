@@ -409,8 +409,8 @@ const ThesisSection = () => {
                     variant="outline"
                     disabled={
                       adviserAcceptanaceData === "" ||
-                      adviserAcceptanaceData.status === "pending" ||
-                      adviserAcceptanaceData.status === "reject" ||
+                      adviserAcceptanaceData?.status === "pending" ||
+                      adviserAcceptanaceData?.status === "reject" ||
                       userPanelApprovals[0]?.status === "pending" ||
                       userPanelApprovals[1]?.status === "pending" ||
                       userPanelApprovals[2]?.status === "pending" ||
@@ -567,24 +567,24 @@ const ThesisSection = () => {
                             <Card
                               key={val._id}
                               className={`${
-                                val.status == "reject" ? "bg-red-500" : ""
+                                val?.status == "reject" ? "bg-red-500" : ""
                               }`}
                             >
                               <CardHeader>
                                 <CardTitle>{val.panelId.lastname}</CardTitle>
                                 <CardDescription>
-                                  {val.remarks || "No idicated remarks"}
+                                  {val?.remarks || "No idicated remarks"}
                                 </CardDescription>
 
                                 <CardDescription className="flex items-center gap-2">
-                                  {val.status == "pending" ? (
+                                  {val?.status == "pending" ? (
                                     <Button
                                       disabled
                                       className="bg-orange-500 h-[25px]"
                                     >
                                       Pending
                                     </Button>
-                                  ) : val.status === "reject" ? (
+                                  ) : val?.status === "reject" ? (
                                     <Button disabled variant={"secondary"}>
                                       Rejected
                                     </Button>
@@ -597,7 +597,7 @@ const ThesisSection = () => {
                                       Approved
                                     </Button>
                                   )}
-                                  {val.status === "reject" && (
+                                  {val?.status === "reject" && (
                                     <Dialog>
                                       <DialogTrigger asChild>
                                         <Button size={"icon"} variant="outline">
@@ -817,10 +817,10 @@ const ThesisSection = () => {
                   Request is approved, schedule for defense will be posted here
                 </p>
 
-                {(userThesisModel.panelApprovals[0].status === "approve" ||
-                  userThesisModel.panelApprovals[1].status === "approve" ||
-                  userThesisModel.panelApprovals[2].status === "approve" ||
-                  userThesisModel.panelApprovals[3].status === "approve") && (
+                {(userThesisModel.panelApprovals[0]?.status === "approve" ||
+                  userThesisModel.panelApprovals[1]?.status === "approve" ||
+                  userThesisModel.panelApprovals[2]?.status === "approve" ||
+                  userThesisModel.panelApprovals[3]?.status === "approve") && (
                   <div className="flex flex-col gap-2">
                     <p className="text-sm">
                       Date: {userThesisModel.schedule.date}
@@ -919,10 +919,13 @@ const ThesisSection = () => {
                   Request is approved, schedule for defense will be posted here
                 </p>
 
-                {(userFinalThesisModel.panelApprovals[0].status === "approve" ||
-                  userFinalThesisModel.panelApprovals[1].status === "approve" ||
-                  userFinalThesisModel.panelApprovals[2].status === "approve" ||
-                  userFinalThesisModel.panelApprovals[3].status ===
+                {(userFinalThesisModel.panelApprovals[0]?.status ===
+                  "approve" ||
+                  userFinalThesisModel.panelApprovals[1]?.status ===
+                    "approve" ||
+                  userFinalThesisModel.panelApprovals[2]?.status ===
+                    "approve" ||
+                  userFinalThesisModel.panelApprovals[3]?.status ===
                     "approve") && (
                   <div className="grid grid-cols-2 gap-3">
                     <p className="text-sm">

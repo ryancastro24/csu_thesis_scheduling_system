@@ -445,26 +445,17 @@ const Dashboard = () => {
               <ModeToggle />
 
               <div className="relative">
-                {userThesisDocuments.length > 0 &&
-                  userData.userType === "faculty" && (
+                {userThesisDocuments.length > 0 ||
+                  (notifications.length > 0 &&
+                    userData.userType === "faculty") ||
+                  (userData.userType === "chairperson" && (
                     <Badge
                       className="absolute -top-3 -right-2 rounded-full "
                       variant="destructive"
                     >
-                      {userThesisDocuments.length}
+                      {userThesisDocuments.length + notifications.length}
                     </Badge>
-                  )}
-
-                {notifications.length > 0 &&
-                  (userData.userType === "chairperson" ||
-                    userData.userType === "admin") && (
-                    <Badge
-                      className="absolute -top-3 -right-2 rounded-full "
-                      variant="destructive"
-                    >
-                      {notifications.length}
-                    </Badge>
-                  )}
+                  ))}
 
                 <Button
                   onClick={() => setOpenNotification(true)}
@@ -521,7 +512,7 @@ const Dashboard = () => {
                 {(userData.userType === "chairperson" ||
                   userData.userType === "admin") &&
                   (notifications.length === 0 ? (
-                    <p>No notifications available.</p>
+                    <p>No logs available.</p>
                   ) : (
                     notifications.map((val: any) => (
                       <Card
@@ -561,62 +552,63 @@ const Dashboard = () => {
                     ))
                   ))}
 
-                {userData.userType === "faculty" &&
-                  (userThesisDocuments.length === 0 ? (
-                    <p>No notifications available.</p>
-                  ) : (
-                    userThesisDocuments.map((val: any) => (
-                      <Card
-                        key={val._id}
-                        className="dark:bg-[#303030] bg-slate-100"
-                      >
-                        <CardHeader>
-                          <CardTitle>{val.thesisTitle}</CardTitle>
-                          <CardDescription>
-                            Date: {val.schedule?.date} | Time:{" "}
-                            {val.schedule?.time}
-                          </CardDescription>
-                          <CardDescription>
-                            Authors:{" "}
-                            {val.students
-                              ?.map(
-                                (student: any) =>
-                                  `${student.firstname} ${student.lastname}`
-                              )
-                              .join(", ")}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardFooter className="flex justify-end gap-2">
-                          <Button
-                            variant="destructive"
-                            onClick={() => {
-                              setOpenNotification(false);
-                              setDialogData({
-                                open: true,
-                                action: "Reject",
-                                thesis: val,
-                              });
-                            }}
-                          >
-                            Reject
-                          </Button>
-                          <Button
-                            variant="default"
-                            onClick={() => {
-                              setOpenNotification(false);
-                              setDialogData({
-                                open: true,
-                                action: "Approve",
-                                thesis: val,
-                              });
-                            }}
-                          >
-                            Approve
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))
-                  ))}
+                {userData.userType === "faculty" ||
+                  (userData.userType === "chairperson" &&
+                    (userThesisDocuments.length === 0 ? (
+                      <p>No panel Schedules available.</p>
+                    ) : (
+                      userThesisDocuments.map((val: any) => (
+                        <Card
+                          key={val._id}
+                          className="dark:bg-[#303030] bg-slate-100"
+                        >
+                          <CardHeader>
+                            <CardTitle>{val.thesisTitle}</CardTitle>
+                            <CardDescription>
+                              Date: {val.schedule?.date} | Time:{" "}
+                              {val.schedule?.time}
+                            </CardDescription>
+                            <CardDescription>
+                              Authors:{" "}
+                              {val.students
+                                ?.map(
+                                  (student: any) =>
+                                    `${student.firstname} ${student.lastname}`
+                                )
+                                .join(", ")}
+                            </CardDescription>
+                          </CardHeader>
+                          <CardFooter className="flex justify-end gap-2">
+                            <Button
+                              variant="destructive"
+                              onClick={() => {
+                                setOpenNotification(false);
+                                setDialogData({
+                                  open: true,
+                                  action: "Reject",
+                                  thesis: val,
+                                });
+                              }}
+                            >
+                              Reject
+                            </Button>
+                            <Button
+                              variant="default"
+                              onClick={() => {
+                                setOpenNotification(false);
+                                setDialogData({
+                                  open: true,
+                                  action: "Approve",
+                                  thesis: val,
+                                });
+                              }}
+                            >
+                              Approve
+                            </Button>
+                          </CardFooter>
+                        </Card>
+                      ))
+                    )))}
               </div>
 
               <DialogFooter>
