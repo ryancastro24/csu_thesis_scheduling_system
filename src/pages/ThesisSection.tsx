@@ -138,6 +138,7 @@ const ThesisSection = () => {
   const {
     students,
     faculty,
+    chairpersons,
     adviserAcceptanaceData,
     userPanelApprovals,
     userData,
@@ -145,6 +146,8 @@ const ThesisSection = () => {
     userFinalThesisModel,
   } = useLoaderData();
   const navigation = useNavigation();
+
+  const thesisPanels = [...faculty, ...chairpersons];
 
   const [selectedFaculty, setSelectedFaculty] = useState<{
     id: string;
@@ -298,7 +301,7 @@ const ThesisSection = () => {
                             label="Adviser"
                             value={selectedFaculty} // Pass the entire object
                             onValueChange={setSelectedFaculty} // Ensure it updates correctly
-                            options={faculty}
+                            options={thesisPanels}
                           />
                         </div>
 
@@ -444,14 +447,14 @@ const ThesisSection = () => {
                             label="Chairperson"
                             value={selectedFaculty1} // Pass the entire object
                             onValueChange={setSelectedFaculty1} // Ensure it updates correctly
-                            options={faculty}
+                            options={thesisPanels}
                           />
 
                           <SearchableDropdown
                             label="Panel 2"
                             value={selectedFaculty2} // Pass the entire object
                             onValueChange={setSelectedFaculty2} // Ensure it updates correctly
-                            options={faculty}
+                            options={thesisPanels}
                           />
                         </div>
 
@@ -460,14 +463,14 @@ const ThesisSection = () => {
                             label="Panel 3"
                             value={selectedFaculty3} // Pass the entire object
                             onValueChange={setSelectedFaculty3} // Ensure it updates correctly
-                            options={faculty}
+                            options={thesisPanels}
                           />
 
                           <SearchableDropdown
                             label="Oral Adviser"
                             value={selectedFaculty4} // Pass the entire object
                             onValueChange={setSelectedFaculty4} // Ensure it updates correctly
-                            options={faculty}
+                            options={thesisPanels}
                           />
                         </div>
                         <input
