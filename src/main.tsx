@@ -5,6 +5,7 @@ import LoginPage from "./pages/LoginPage";
 import { action as LoginPageAction } from "./systemComponents/LoginForm";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "./components/ui/theme-provider";
+import PDFViewerComponent from "./pages/PDFViewerComponent";
 import Dashboard, {
   loader as DashboardLoader,
   action as DashboardAction,
@@ -185,6 +186,11 @@ const router = createBrowserRouter([
         element: <Favorites />,
         loader: FavoritesLoader,
         action: FavoritesAction,
+      },
+
+      {
+        path: "view",
+        element: <PDFViewerComponent />,
       },
     ],
   },

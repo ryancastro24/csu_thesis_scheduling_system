@@ -20,7 +20,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useLoaderData, Form, ActionFunction } from "react-router-dom";
+import {
+  useLoaderData,
+  Form,
+  ActionFunction,
+  useNavigate,
+} from "react-router-dom";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { approvedProposal } from "@/backend_api/adviserAcceptance";
@@ -57,6 +62,7 @@ export const action: ActionFunction = async ({ request }) => {
 };
 const Proposals = () => {
   const { adviserAcceptanaceData } = useLoaderData();
+  const navigate = useNavigate();
   return (
     <div className="grid grid-cols-3 gap-5">
       {adviserAcceptanaceData.map((val: any) => (
@@ -75,20 +81,23 @@ const Proposals = () => {
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm">Download the file to view the content.</p>
 
-            <a
-              href={val.thesisFile}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-[150px]"
+            <Button
+              onClick={() =>
+                navigate(`/dashboard/view`, {
+                  state: {
+                    thesisFile: val.thesisFile,
+                    title: val.proposeTitle,
+                    student1: val.student1Id,
+                    student2: val.student2Id,
+                    student3: val.student3Id,
+                  },
+                })
+              }
+              className="w-full flex items-center gap-2"
+              variant="secondary"
             >
-              <Button
-                className="w-full flex items-center gap-2"
-                variant="secondary"
-              >
-                <FaEye /> View Content
-              </Button>
-            </a>
+              <FaEye /> View Content
+            </Button>
           </CardContent>
 
           <CardFooter>
@@ -104,7 +113,7 @@ const Proposals = () => {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Sure jud ka?</AlertDialogTitle>
+                      <AlertDialogTitle>Thesis rejected</AlertDialogTitle>
                       <AlertDialogDescription>
                         Please type in the reason why you reject this proposal
                       </AlertDialogDescription>

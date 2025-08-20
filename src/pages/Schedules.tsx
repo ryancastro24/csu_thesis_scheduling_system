@@ -111,10 +111,10 @@ export async function loader() {
   const students = await getStudents();
   const faculty = await getfaculty();
   const chairpersons = await getChairpersons();
-  const thesisSchedules = await getThesisDocuments();
-
   const user = localStorage.getItem("user");
   const userData: any = JSON.parse(user as any);
+  console.log("user data", userData);
+  const thesisSchedules = await getThesisDocuments(userData.departmentAcronym);
 
   return { students, faculty, chairpersons, thesisSchedules, userData };
 }

@@ -448,6 +448,7 @@ const ThesisSection = () => {
                             value={selectedFaculty1} // Pass the entire object
                             onValueChange={setSelectedFaculty1} // Ensure it updates correctly
                             options={thesisPanels}
+                            
                           />
 
                           <SearchableDropdown
@@ -467,7 +468,7 @@ const ThesisSection = () => {
                           />
 
                           <SearchableDropdown
-                            label="Oral Adviser"
+                            label="Oral Secretary"
                             value={selectedFaculty4} // Pass the entire object
                             onValueChange={setSelectedFaculty4} // Ensure it updates correctly
                             options={thesisPanels}
@@ -996,7 +997,7 @@ function SearchableDropdown({
         <PopoverContent className="w-full p-0">
           <Command>
             <CommandInput placeholder={`Search ${label}`} />
-            <CommandList>
+            <CommandList aria-required>
               <CommandGroup>
                 {options.map((option) => {
                   const fullName = `${option.firstname} ${

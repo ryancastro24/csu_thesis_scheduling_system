@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 const baseAPI = import.meta.env.VITE_BACKEND_API_ENDPOINT;
+
+console.log(baseAPI)
 import {
   Card,
   CardContent,

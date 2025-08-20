@@ -26,13 +26,15 @@ export async function createFinalThesisSchedule(data: any) {
   }
 }
 
-export async function getThesisDocuments() {
+export async function getThesisDocuments(department: string) {
   try {
-    const response = await axios.get(`${baseAPI}/thesisDocuments`);
-    return response.data; // Return the retrieved data
+    const response = await axios.get(`${baseAPI}/thesisDocuments`, {
+      params: { department }, // sends ?department=BSCS
+    });
+    return response.data;
   } catch (error) {
-    console.error("Error fetching colleges:", error);
-    throw error; // Rethrow the error for handling
+    console.error("Error fetching thesis documents:", error);
+    throw error;
   }
 }
 
