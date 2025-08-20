@@ -332,7 +332,7 @@ const Dashboard = () => {
               </>
             )}
 
-            {["chairperson", "admin"].includes(userData.userType) && (
+            {["chairperson"].includes(userData.userType) && (
               <li
                 onClick={() => navigate("/dashboard/schedules")}
                 className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
