@@ -64,7 +64,7 @@ import {
 } from "@/components/ui/dialog";
 import { getPanelApprovals } from "@/backend_api/panelApproval";
 import { getAdviserAcceptanceRequests } from "@/backend_api/adviserAcceptance";
-import { getUserProfile } from "@/backend_api/users";
+import { getUserProfile, getRequestingUsers } from "@/backend_api/users";
 import Loader from "@/systemComponents/Loader";
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
@@ -103,6 +103,8 @@ export const loader = async () => {
     userData.id
   );
 
+  const requestingUsersData = await getRequestingUsers();
+
   const userProfile = await getUserProfile(userData.id);
   const notifications = await getAllnotificationsReaded();
   return {
@@ -112,6 +114,7 @@ export const loader = async () => {
     panelApprovals,
     adviserAcceptanaceData,
     userProfile,
+    requestingUsersData,
   }; // Proceed if authenticated
 };
 
@@ -135,6 +138,7 @@ const Dashboard = () => {
     panelApprovals,
     adviserAcceptanaceData,
     userProfile,
+    requestingUsersData,
   } = useLoaderData();
   const [openNotification, setOpenNotification] = useState(false);
   const [remarks, setRemarks] = useState("");
@@ -149,6 +153,7 @@ const Dashboard = () => {
   console.log("User Data:", userData);
   console.log("User Thesis Documents:", userThesisDocuments);
   console.log("Notifications:", notifications);
+  console.log("requesting users", requestingUsersData);
   const handleDialogClose = () => {
     setOpenNotification(false);
   };
@@ -217,11 +222,19 @@ const Dashboard = () => {
                   location.pathname === "/dashboard/users"
                     ? "bg-orange-500 text-white"
                     : ""
-                } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
+                } hover:text-white relative flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
               >
                 <span className="text-lg">
                   <PiUsersFill />
                 </span>
+                {requestingUsersData?.length > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-2 -right-2"
+                  >
+                    {requestingUsersData.length}
+                  </Badge>
+                )}
                 Active users
               </li>
             )}

@@ -211,7 +211,7 @@ const LandingPage = () => {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[525px]">
           <DialogHeader>
             <DialogTitle>
               {isFavorite(selectedThesis?._id || "")

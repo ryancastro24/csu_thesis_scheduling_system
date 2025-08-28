@@ -34,6 +34,16 @@ export async function getUsers() {
   }
 }
 
+export async function getRequestingUsers() {
+  try {
+    const response = await axios.get(`${baseAPI}/users/requestingUsers`);
+    return response.data; // Return the retrieved data
+  } catch (error) {
+    console.error("Error fetching colleges:", error);
+    throw error; // Rethrow the error for handling
+  }
+}
+
 export async function getStudents() {
   try {
     const response = await axios.get(`${baseAPI}/users/students/data`);
