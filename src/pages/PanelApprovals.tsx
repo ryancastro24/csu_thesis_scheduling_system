@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Form, ActionFunction,useNavigate } from "react-router-dom";
+import { Form, ActionFunction, useNavigate } from "react-router-dom";
 import { panelApproval } from "@/backend_api/panelApproval";
 export const loader = async () => {
   const user = localStorage.getItem("user");
@@ -47,7 +47,7 @@ export const action: ActionFunction = async ({ request }) => {
 
 const PanelApprovals = () => {
   const { panelApprovals } = useLoaderData();
-  const  navigate = useNavigate();
+  const navigate = useNavigate();
   return (
     <div className="grid grid-cols-3 gap-10">
       {panelApprovals.map((val: any) => (
@@ -67,19 +67,23 @@ const PanelApprovals = () => {
           <CardContent className="flex flex-col gap-3">
             <p className="text-sm">Download the file to view the content.</p>
 
-          
-              <Button
+            <Button
               onClick={() =>
-              navigate(`/dashboard/view`, {
-              state: { thesisFile: val.thesisFile, title: val.proposeTitle,student1: val.student1Id,student2: val.student2Id,student3: val.student3Id }
-              })
-            }
+                navigate(`/dashboard/view`, {
+                  state: {
+                    thesisFile: val.thesisFile,
+                    title: val.proposalId.proposeTitle,
+                    student1: val.proposalId.student1Id,
+                    student2: val.proposalId.student2Id,
+                    student3: val.proposalId.student3Id,
+                  },
+                })
+              }
               className="w-full flex items-center gap-2"
               variant="secondary"
             >
               <FaEye /> View Content
             </Button>
-          
           </CardContent>
 
           <CardFooter>

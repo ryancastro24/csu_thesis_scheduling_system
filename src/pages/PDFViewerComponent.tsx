@@ -34,7 +34,7 @@ const PDFViewer = () => {
   return (
     <div className="h-[750px] overflow-auto bg-background p-4 rounded shadow">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-white">{title}</h1>
+        <h1 className="dark:text-white light:text-black"> {title}</h1>
         <Dialog>
           <DialogTrigger>
             <Button variant={"secondary"} className="cursor-pointer">
@@ -44,20 +44,22 @@ const PDFViewer = () => {
           </DialogTrigger>
           <DialogContent className="max-h-[80vh] overflow-y-auto w-[900px]">
             <DialogHeader>
-              <DialogTitle>Thesis Title: {title}</DialogTitle>
+              <DialogTitle className="dark:text-black">
+                Thesis Title: {title}
+              </DialogTitle>
 
               <h1 className="font-bold mt-4">Authors</h1>
               <div className="w-full grid grid-cols-3 gap-5 h-full dark:bg-[#1E1E1E] bg-slate-50 p-2 rounded-lg shadow">
                 <div className="w-full flex gap-3  items-center dark:bg-[#141414] bg-slate-50 p-4 rounded-lg shadow">
                   <Avatar className="w-15 h-16">
-                    <AvatarImage src={student1.profilePicture} />
+                    <AvatarImage src={student1?.profilePicture} />
                     <AvatarFallback>CN</AvatarFallback>
                   </Avatar>
                   <div>
                     <h1 className="font-bold text-[18px]">
-                      {student1.firstname} {student1.lastname}
+                      {student1?.firstname} {student1?.lastname}
                     </h1>
-                    <h2 className="text-xs">{student1.id_number}</h2>
+                    <h2 className="text-xs">{student1?.id_number}</h2>
                   </div>
                 </div>
                 <div className="w-full flex gap-3 items-center dark:bg-[#141414] bg-slate-50 p-4 rounded-lg shadow">
