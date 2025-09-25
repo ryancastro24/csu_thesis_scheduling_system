@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { BsPersonFillDash } from "react-icons/bs";
-
+import { FileText } from "lucide-react";
+import { forms } from "@/lib/formsData";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -193,6 +194,21 @@ const ThesisSection = () => {
     id: string;
     name: string;
   } | null>(null);
+
+  const handleDownload = async (form: any) => {
+    const response = await fetch(form.link);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${form.title}.docx`; // 👈 Force custom file name
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    window.URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="grid grid-cols-3 gap-5">
@@ -448,7 +464,6 @@ const ThesisSection = () => {
                             value={selectedFaculty1} // Pass the entire object
                             onValueChange={setSelectedFaculty1} // Ensure it updates correctly
                             options={thesisPanels}
-                            
                           />
 
                           <SearchableDropdown
@@ -722,9 +737,27 @@ const ThesisSection = () => {
                       for submission.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    {/* Form list/download buttons go here */}
+                  <div className="grid gap-3 py-4">
+                    {forms.map((form) => (
+                      <div
+                        key={form.id}
+                        className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-5 w-5 text-blue-600" />
+                          <span className="font-medium">{form.title}</span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleDownload(form)}
+                        >
+                          Download
+                        </Button>
+                      </div>
+                    ))}
                   </div>
+
                   <DialogFooter>
                     <Button type="submit">Download All</Button>
                   </DialogFooter>

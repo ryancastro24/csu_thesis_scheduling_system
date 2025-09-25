@@ -165,7 +165,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="w-full font-[Poppins] h-screen grid gap-3 p-3 grid-cols-[200px_1fr] dark:bg-[#121212]">
+    <div className="w-full font-[Poppins] h-screen grid gap-3 p-3 grid-cols-[210px_1fr] dark:bg-[#121212]">
       <div className="w-full h-full bg-slate-50 rounded-lg dark:bg-[#1E1E1E] px-2 py-4 flex flex-col gap-4">
         <div className="flex items-center gap-3">
           <Avatar>
@@ -326,7 +326,7 @@ const Dashboard = () => {
                   <span className="text-lg">
                     <FaCodePullRequest />
                   </span>
-                  Proposals
+                  Adviser Proposals
                   {adviserAcceptanaceData?.filter(
                     (acceptance: any) => acceptance.status === "pending"
                   ).length > 0 && (
