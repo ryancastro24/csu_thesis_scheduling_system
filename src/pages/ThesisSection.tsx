@@ -6,10 +6,12 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { MdEditDocument } from "react-icons/md";
 import { Label } from "@/components/ui/label";
 import { BsPersonFillDash } from "react-icons/bs";
 import { FileText } from "lucide-react";
 import { forms } from "@/lib/formsData";
+import { FaUserEdit } from "react-icons/fa";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -886,6 +888,122 @@ const ThesisSection = () => {
                   : "Send Request"}
               </Button>
             )}
+
+            {!userThesisModel.defended && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size={"icon"} variant={"outline"}>
+                    <MdEditDocument />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Panel Proposals Update</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Check each panel's approval status.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {Array.isArray(userPanelApprovals) &&
+                      userPanelApprovals.map((val: any) => (
+                        <Card
+                          key={val._id}
+                          className={`${
+                            val?.status == "reject" ? "bg-red-500" : ""
+                          }`}
+                        >
+                          <CardHeader>
+                            <CardTitle>
+                              {val.panelId.firstname} {val.panelId.lastname}
+                            </CardTitle>
+
+                            <CardDescription className="flex items-center gap-2">
+                              {val?.status == "pending" ? (
+                                <Button
+                                  disabled
+                                  className="bg-orange-500 h-[25px]"
+                                >
+                                  Pending
+                                </Button>
+                              ) : val?.status === "reject" ? (
+                                <Button disabled variant={"secondary"}>
+                                  Rejected
+                                </Button>
+                              ) : (
+                                <Button
+                                  className="h-[25px]"
+                                  disabled
+                                  variant={"secondary"}
+                                >
+                                  Approved
+                                </Button>
+                              )}
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button size={"icon"} variant="secondary">
+                                    <FaUserEdit />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-[400px]">
+                                  <DialogHeader>
+                                    <DialogTitle>Change Panel</DialogTitle>
+                                    <DialogDescription>
+                                      Browse the list of available panel members
+                                      and select 4 to evaluate your thesis.
+                                    </DialogDescription>
+                                  </DialogHeader>
+
+                                  <Form method="POST">
+                                    <SearchableDropdown
+                                      label="New Panel"
+                                      value={selectedNewPanel} // Pass the entire object
+                                      onValueChange={setSelectedNewPanel} // Ensure it updates correctly
+                                      options={faculty}
+                                    />
+
+                                    <input
+                                      name="newPanelId"
+                                      type="hidden"
+                                      value={selectedNewPanel?.id}
+                                    />
+                                    <input
+                                      name="oldPanelId"
+                                      type="hidden"
+                                      value={val.panelId._id}
+                                    />
+
+                                    <input
+                                      name="id"
+                                      type="hidden"
+                                      value={val._id}
+                                    />
+
+                                    <DialogFooter>
+                                      <Button
+                                        className="mt-4"
+                                        name="transaction"
+                                        value={"changePanel"}
+                                        type="submit"
+                                      >
+                                        Change Panel
+                                      </Button>
+                                    </DialogFooter>
+                                  </Form>
+                                </DialogContent>
+                              </Dialog>
+                            </CardDescription>
+                          </CardHeader>
+                        </Card>
+                      ))}
+                  </div>
+
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </CardFooter>
         </Form>
       </Card>
@@ -975,15 +1093,136 @@ const ThesisSection = () => {
                 )}
               </div>
             ) : (
-              <Button
-                type="submit"
-                name="transaction"
-                value={"addFinalRequest"}
-              >
-                {navigation.state == "submitting"
-                  ? "Loading..."
-                  : "Send Request"}
-              </Button>
+              <div className="flex items-center justify-between w-full">
+                <Button
+                  type="submit"
+                  name="transaction"
+                  value={"addFinalRequest"}
+                >
+                  {navigation.state == "submitting"
+                    ? "Loading..."
+                    : "Send Request"}
+                </Button>
+
+                {!userFinalThesisModel.defended && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size={"icon"} variant={"outline"}>
+                        <MdEditDocument />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Panel Proposals Update
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Check each panel's approval status.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {Array.isArray(userPanelApprovals) &&
+                          userPanelApprovals.map((val: any) => (
+                            <Card
+                              key={val._id}
+                              className={`${
+                                val?.status == "reject" ? "bg-red-500" : ""
+                              }`}
+                            >
+                              <CardHeader>
+                                <CardTitle>
+                                  {val.panelId.firstname} {val.panelId.lastname}
+                                </CardTitle>
+
+                                <CardDescription className="flex items-center gap-2">
+                                  {val?.status == "pending" ? (
+                                    <Button
+                                      disabled
+                                      className="bg-orange-500 h-[25px]"
+                                    >
+                                      Pending
+                                    </Button>
+                                  ) : val?.status === "reject" ? (
+                                    <Button disabled variant={"secondary"}>
+                                      Rejected
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      className="h-[25px]"
+                                      disabled
+                                      variant={"secondary"}
+                                    >
+                                      Approved
+                                    </Button>
+                                  )}
+                                  <Dialog>
+                                    <DialogTrigger asChild>
+                                      <Button size={"icon"} variant="secondary">
+                                        <FaUserEdit />
+                                      </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[400px]">
+                                      <DialogHeader>
+                                        <DialogTitle>Change Panel</DialogTitle>
+                                        <DialogDescription>
+                                          Browse the list of available panel
+                                          members and select 4 to evaluate your
+                                          thesis.
+                                        </DialogDescription>
+                                      </DialogHeader>
+
+                                      <Form method="POST">
+                                        <SearchableDropdown
+                                          label="New Panel"
+                                          value={selectedNewPanel} // Pass the entire object
+                                          onValueChange={setSelectedNewPanel} // Ensure it updates correctly
+                                          options={faculty}
+                                        />
+
+                                        <input
+                                          name="newPanelId"
+                                          type="hidden"
+                                          value={selectedNewPanel?.id}
+                                        />
+                                        <input
+                                          name="oldPanelId"
+                                          type="hidden"
+                                          value={val.panelId._id}
+                                        />
+
+                                        <input
+                                          name="id"
+                                          type="hidden"
+                                          value={val._id}
+                                        />
+
+                                        <DialogFooter>
+                                          <Button
+                                            className="mt-4"
+                                            name="transaction"
+                                            value={"changePanel"}
+                                            type="submit"
+                                          >
+                                            Change Panel
+                                          </Button>
+                                        </DialogFooter>
+                                      </Form>
+                                    </DialogContent>
+                                  </Dialog>
+                                </CardDescription>
+                              </CardHeader>
+                            </Card>
+                          ))}
+                      </div>
+
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </div>
             )}
           </CardFooter>
         </Form>
