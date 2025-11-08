@@ -31,8 +31,8 @@ const LogsPage = () => {
           <CardHeader>
             <CardTitle>{notification?.thesisId?.thesisTitle}</CardTitle>
             <CardDescription>
-              Date: {notification.thesisId.schedule?.date} | Time:{" "}
-              {notification.thesisId.schedule?.time}
+              Date: {notification.thesisId?.schedule?.date} | Time:{" "}
+              {notification.thesisId?.schedule?.time}
             </CardDescription>
           </CardHeader>
           <CardFooter className="flex items-center justify-between gap-10">
@@ -43,7 +43,7 @@ const LogsPage = () => {
               </span>
               <span className="text-sm">
                 <strong className="italic">Remarks:</strong>{" "}
-                {notification.remarks}
+                {notification?.remarks}
               </span>
             </div>
             <span

@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 const baseAPI = import.meta.env.VITE_BACKEND_API_ENDPOINT;
-
-console.log(baseAPI)
+import bg from "@/assets/bg.png";
+console.log(baseAPI);
 import {
   Card,
   CardContent,
@@ -77,10 +76,7 @@ export const action: ActionFunction = async ({ request }) => {
   }
 };
 
-export function LoginForm({
-  className,
-  ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+export function LoginForm({}: React.ComponentPropsWithoutRef<"div">) {
   const fetcher = useFetcher();
   const [loginData, setLoginData] = useState({
     username: "",
@@ -292,7 +288,12 @@ export function LoginForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className="flex relative w-full h-screen items-center justify-center overflow-hidden">
+      <img
+        src={bg}
+        alt="background image"
+        className="absolute inset-0 w-full z-[-1]"
+      />
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">Login</CardTitle>
@@ -590,7 +591,10 @@ export function LoginForm({
                           required
                           defaultValue={newUser.lastname}
                           onChange={(e) =>
-                            setNewUser({ ...newUser, lastname: e.target.value })
+                            setNewUser({
+                              ...newUser,
+                              lastname: e.target.value,
+                            })
                           }
                           name="lastname"
                           placeholder="Enter Lastname"
@@ -650,7 +654,10 @@ export function LoginForm({
                         name="id_number"
                         defaultValue={newUser.id_number}
                         onChange={(e) =>
-                          setNewUser({ ...newUser, id_number: e.target.value })
+                          setNewUser({
+                            ...newUser,
+                            id_number: e.target.value,
+                          })
                         }
                         placeholder="Enter Valid Id Number"
                       />

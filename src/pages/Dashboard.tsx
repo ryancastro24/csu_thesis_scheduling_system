@@ -181,10 +181,6 @@ const Dashboard = () => {
         <Separator />
         <div>
           <ul className="w-full px-2 flex flex-col gap-3">
-            <h2 className="text-sm mt-4 py-2 px-3 rounded dark:bg-[#303030] bg-slate-200">
-              Navigation
-            </h2>
-
             <li
               onClick={() => navigate("/")}
               className={`hover:bg-orange-500 ${
@@ -326,7 +322,7 @@ const Dashboard = () => {
                   <span className="text-lg">
                     <FaCodePullRequest />
                   </span>
-                  Adviser Proposals
+                  Advisory Requests
                   {adviserAcceptanaceData?.filter(
                     (acceptance: any) => acceptance.status === "pending"
                   ).length > 0 && (

@@ -268,7 +268,6 @@ export default function UsersPage() {
       setDeleteModal(false);
     } else if (fetcher.data.message.includes("User approved successfully")) {
       toast.success(fetcher.data.message);
-      setDeleteModal(false);
     } else if (fetcher.data.message.includes("User updated successfully")) {
       toast.success(fetcher.data.message);
       setUpdateModal(false);
@@ -309,6 +308,7 @@ export default function UsersPage() {
     });
   };
 
+  console.log("state status", fetcher.state);
   const handleUpdateModalClose = () => {
     setUpdateModal(false);
     setSelectedUser({

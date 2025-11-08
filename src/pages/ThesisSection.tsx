@@ -151,6 +151,10 @@ const ThesisSection = () => {
   const navigation = useNavigation();
 
   const thesisPanels = [...faculty, ...chairpersons];
+  const [proposalTitle, setProposalTitle] = useState<string>("");
+  const [adviserThesisFile, setAdviserThesisFile] = useState<File | null>(null);
+  const [panelProposalTitle, setPanelProposalTitle] = useState<string>("");
+  const [panelThesisFile, setPanelThesisFile] = useState<File | null>(null);
 
   const [selectedFaculty, setSelectedFaculty] = useState<{
     id: string;
@@ -327,18 +331,28 @@ const ThesisSection = () => {
                           <div className="flex flex-col gap-3">
                             <Label>Upload Proposed Title</Label>
                             <Input
-                              className="bg-[#1b1b1b]"
+                              value={proposalTitle}
+                              onChange={(e) => setProposalTitle(e.target.value)}
+                              className="dark:bg-[#1b1b1b] dark:text-white"
                               type="text"
                               name="proposeTitle"
                               placeholder="Enter thesis proposed title"
                             />
                           </div>
                           <div className="flex flex-col gap-3">
-                            <Label>Upload Initial Thesis</Label>
+                            <Label>Upload Thesis Initial Manuscript</Label>
                             <Input
-                              className="bg-[#1b1b1b]"
                               type="file"
                               name="file"
+                              accept=".pdf,.doc,.docx"
+                              className="dark:bg-[#1b1b1b]"
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>
+                              ) =>
+                                setAdviserThesisFile(
+                                  e.target.files?.[0] || null
+                                )
+                              }
                             />
                           </div>
                         </div>
@@ -346,7 +360,13 @@ const ThesisSection = () => {
                     </Card>
                     <DialogFooter>
                       <Button
-                        disabled={navigation.state === "submitting"}
+                        disabled={
+                          navigation.state === "submitting" ||
+                          selectedStudent1 === null ||
+                          proposalTitle === "" ||
+                          selectedFaculty === null ||
+                          adviserThesisFile === null
+                        }
                         name="transaction"
                         value={"adviserApproval"}
                         type="submit"
@@ -521,7 +541,11 @@ const ThesisSection = () => {
                           <div className="flex flex-col gap-3">
                             <Label>Upload Proposed Title</Label>
                             <Input
-                              className="bg-[#1b1b1b]"
+                              value={panelProposalTitle}
+                              onChange={(e) =>
+                                setPanelProposalTitle(e.target.value)
+                              }
+                              className="dark:bg-[#1b1b1b] dark:text-white"
                               type="text"
                               name="proposeTitle"
                               placeholder="Enter thesis proposed title"
@@ -530,9 +554,14 @@ const ThesisSection = () => {
                           <div className="flex flex-col gap-3">
                             <Label>Upload Initial Thesis</Label>
                             <Input
-                              className="bg-[#1b1b1b]"
                               type="file"
                               name="file"
+                              className="dark:bg-[#1b1b1b]"
+                              onChange={(
+                                e: React.ChangeEvent<HTMLInputElement>
+                              ) =>
+                                setPanelThesisFile(e.target.files?.[0] || null)
+                              }
                             />
                           </div>
                         </div>
@@ -540,7 +569,15 @@ const ThesisSection = () => {
                     </Card>
                     <DialogFooter>
                       <Button
-                        disabled={navigation.state === "submitting"}
+                        disabled={
+                          navigation.state === "submitting" ||
+                          selectedFaculty1 === null ||
+                          selectedFaculty2 === null ||
+                          selectedFaculty3 === null ||
+                          selectedFaculty4 === null ||
+                          panelProposalTitle === "" ||
+                          panelThesisFile === null
+                        }
                         name="transaction"
                         value={"panelApproval"}
                         type="submit"
@@ -793,10 +830,10 @@ const ThesisSection = () => {
             <Input type="hidden" name="userId" value={userData.id} />
             <div className="mt-5">
               <div className="flex flex-col gap-3">
-                <Label>Upload Thesis File</Label>
+                <Label>Upload Manuscript</Label>
                 <Input
                   name="thesisFile"
-                  className="bg-[#1b1b1b]"
+                  className="dark:bg-[#1b1b1b]"
                   type="file"
                   disabled={
                     (userPanelApprovals.length == 0 &&
@@ -815,7 +852,7 @@ const ThesisSection = () => {
                 <Label>Upload Approval Files</Label>
                 <Input
                   name="approvalFile"
-                  className="bg-[#1b1b1b]"
+                  className="dark:bg-[#1b1b1b]"
                   type="file"
                   disabled={
                     (userPanelApprovals.length == 0 &&
@@ -1029,10 +1066,10 @@ const ThesisSection = () => {
             />
             <div className="mt-5">
               <div className="flex flex-col gap-3">
-                <Label>Upload Thesis File</Label>
+                <Label>Upload Manuscript</Label>
                 <Input
                   name="thesisFile"
-                  className="bg-[#1b1b1b]"
+                  className="dark:bg-[#1b1b1b]"
                   type="file"
                   disabled={!userThesisModel.defended}
                 />
@@ -1042,7 +1079,7 @@ const ThesisSection = () => {
                 <Label>Upload Approval Files</Label>
                 <Input
                   name="approvalFile"
-                  className="bg-[#1b1b1b]"
+                  className="dark:bg-[#1b1b1b]"
                   type="file"
                   disabled={!userThesisModel.defended}
                 />
