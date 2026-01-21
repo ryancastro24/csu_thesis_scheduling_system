@@ -7,13 +7,15 @@ export async function addAdviserAcceptanceRequest(data: any) {
     return response.data; // Return the created department data
   } catch (error) {
     console.error("Error adding department:", error);
-    throw error; // Rethrow the error for handlinghttp://localhost:5000/api/thesisDocuments
+    throw error;
   }
 }
 
 export async function getUserAdviserAcceptanceRequest(id: any) {
   try {
     const response = await axios(`${baseAPI}/adviserAcceptance/${id}`);
+
+    console.log("adviser acceptance response data:", response.data);
     return response.data; // Return the response data
   } catch (error) {
     console.error("Error updating notifications:", error);
@@ -44,5 +46,20 @@ export async function approvedProposal(id: any, data: any) {
   } catch (error) {
     console.error("Error updating notifications:", error);
     throw error; // Rethrow the error for handling
+  }
+}
+
+export async function changeAdviserRequest(id: any, adviserId: any) {
+  console.log("id", id);
+
+  console.log("adviserId", adviserId);
+  try {
+    const response = await axios.put(
+      `${baseAPI}/adviserAcceptance/changedAdviserRequest/${id}/${adviserId}`
+    );
+    return response.data; // Return the created department data
+  } catch (error) {
+    console.error("Error adding department:", error);
+    throw error;
   }
 }

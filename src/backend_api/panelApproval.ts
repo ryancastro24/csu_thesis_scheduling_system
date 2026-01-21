@@ -4,6 +4,7 @@ export async function panelApprovalRequest(data: any) {
   console.log("accepting data:", data);
   try {
     const response = await axios.post(`${baseAPI}/panelApproval`, data);
+
     return response.data; // Return the created department data
   } catch (error) {
     console.error("Error adding department:", error);
@@ -14,6 +15,7 @@ export async function panelApprovalRequest(data: any) {
 export async function getUserPanelApprovals(id: any) {
   try {
     const response = await axios(`${baseAPI}/panelApproval/${id}`);
+
     return response.data; // Return the response data
   } catch (error) {
     console.error("Error updating notifications:", error);

@@ -11,17 +11,14 @@ export async function getDepartments() {
 }
 
 export async function addUsertData(data: any) {
-  try {
-    const response = await axios.post(`${baseAPI}/users`, data, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data; // Return the created department data
-  } catch (error) {
-    console.error("Error adding department:", error);
-    throw error; // Rethrow the error for handling
-  }
+  const response = await axios.post(`${baseAPI}/users`, data, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  console.log("returned data", response.data);
+  return response.data; // Return the created department data
 }
 
 export async function getUsers() {
@@ -97,10 +94,8 @@ export async function updateUserData(id: any, data: any) {
 }
 
 export async function approvedUser(id: any) {
-  console.log("user id", id);
   try {
     const response = await axios.put(`${baseAPI}/users/approvedUser/${id}`);
-    console.log("delete function response", response.data);
     return response.data; // Return the created department data
   } catch (error) {
     console.error("Error adding department:", error);

@@ -78,6 +78,22 @@ export const action: ActionFunction = async ({ request }) => {
     return updatedSchedule;
   }
 };
+
+const getStartDateTime = (date: string, timeRange: string) => {
+  const startTime = timeRange.split(" - ")[0]; // "9:00AM"
+
+  const match = startTime.match(/^(\d{1,2}):(\d{2})(AM|PM)$/);
+  if (!match) return date;
+
+  let [, h, m, period] = match;
+  let hour = Number(h);
+
+  if (period === "PM" && hour !== 12) hour += 12;
+  if (period === "AM" && hour === 12) hour = 0;
+
+  return `${date}T${hour.toString().padStart(2, "0")}:${m}:00`;
+};
+
 export default function Calendar() {
   const { userData, schedules } = useLoaderData();
 
@@ -133,7 +149,10 @@ export default function Calendar() {
         events={schedules.map((schedule: any) => ({
           id: schedule._id,
           title: `${schedule.eventType} (${schedule.time})`,
-          date: schedule.date,
+          start: getStartDateTime(schedule.date, schedule.time),
+          backgroundColor: "#2563eb", // blue
+          borderColor: "#2563eb",
+          textColor: "#ffffff", // ✅ IMPORTANT
         }))}
         dateClick={handleDateClick}
         eventClick={handleEventClick}

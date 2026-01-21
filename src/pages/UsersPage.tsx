@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -39,7 +39,6 @@ import {
   PaginationNext,
 } from "@/components/ui/pagination";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search } from "lucide-react"; // Import Lucide icon
 import {
   Dialog,
   DialogContent,
@@ -66,48 +65,40 @@ import { useLoaderData, useFetcher, ActionFunction } from "react-router-dom";
 
 const ITEMS_PER_PAGE = 10;
 
-// loader function
+// Loader function
 export async function loader() {
   const departments = await getDepartments();
   const users = await getUsers();
-  console.log(departments);
   return { departments, users };
 }
 
-//action function
+// Action function
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
     formData.entries()
   );
 
-  console.log(formData.entries());
   if (request.method === "POST") {
-    const userData = await addUsertData(data); // Send formData directly
-    return userData;
+    return await addUsertData(data);
   }
 
   if (request.method === "PUT") {
-    const userData = await updateUserData(data?.id, data);
-    return userData;
+    return await updateUserData(data?.id, data);
   }
 };
 
 export default function UsersPage() {
   const { departments, users } = useLoaderData();
-  console.log(users);
-
   const fetcher = useFetcher();
 
-  console.log("fetcher data:", fetcher.data);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [approvalModal, setApprovalModal] = useState(false);
   const [deleteModal, setDeleteModal] = useState(false);
   const [updateModal, setUpdateModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedUsertype, setSelectedUsertype] = useState("");
-  const [selectedUser, setSelectedUser] = useState({
+  const [selectedUser, setSelectedUser] = useState<any>({
     id: "",
     firstname: "",
     middlename: "",
@@ -122,37 +113,9 @@ export default function UsersPage() {
     password: "",
   });
 
-  const [newUser, setNewUser] = useState<{
-    firstname: string;
-    middlename: string;
-    lastname: string;
-    suffix: string;
-    email: string;
-    id_number: string;
-    college: string;
-    departmentId: string;
-    userType: string;
-    username: string;
-    password: string;
-    file: File | null; // Specify type for file
-  }>({
-    firstname: "",
-    middlename: "",
-    lastname: "",
-    suffix: "",
-    email: "",
-    id_number: "",
-    college: "",
-    departmentId: "",
-    userType: "",
-    username: "",
-    password: "",
-    file: null, // Initialize to null to handle file upload
-  });
+  const [selectedUsertype, setSelectedUsertype] = useState("");
 
-  // Handle search input change
-
-  console.log(newUser);
+  // Search filter
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
@@ -162,15 +125,12 @@ export default function UsersPage() {
     const fullName = `${user.firstname} ${user.middlename ?? ""} ${
       user.lastname
     }`.toLowerCase();
-    const idNumber = user.id_number?.toString().toLowerCase() || "";
+    const idNumber = (user.id_number ?? "").toLowerCase();
     const query = searchQuery.toLowerCase();
-
     const matchesSearch = fullName.includes(query) || idNumber.includes(query);
-
     const matchesUserType = selectedUsertype
       ? user.userType === selectedUsertype
       : true;
-
     return matchesSearch && matchesUserType;
   });
 
@@ -181,115 +141,15 @@ export default function UsersPage() {
   );
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-    }
+    if (newPage >= 1 && newPage <= totalPages) setCurrentPage(newPage);
   };
 
-  // Handle opening and closing the dialog
-  const handleOpenDialog = () => {
-    setIsDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setNewUser({
-      firstname: "",
-      middlename: "",
-      lastname: "",
-      suffix: "",
-      email: "",
-      id_number: "",
-      college: "",
-      departmentId: "",
-      userType: "",
-      username: "",
-      password: "",
-      file: null, // Reset to null
-    });
-    setIsDialogOpen(false);
-  };
-
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Prevent default form submission
-    const formData = new FormData(); // Create FormData to handle file upload
-
-    // Check if newUser has any values before appending to formData
-    if (Object.values(newUser).some((value) => value !== null)) {
-      Object.entries(newUser).forEach(([key, value]) => {
-        if (value !== null) {
-          formData.append(key, value);
-        }
-      });
-
-      // Log the FormData values for debugging
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}: ${value}`);
-      }
-    } else {
-      console.warn("FormData is empty. No values to submit."); // Log a warning if formData is empty
-    }
-
-    console.log("Submitting FormData:", formData); // Log to confirm FormData submission
-    fetcher.submit(formData, { method: "POST" }); // Submit FormData
-  };
-
-  const handleSubmitUpdate = (e: any) => {
-    e.preventDefault(); // Prevent default form submission
+  const handleSubmitUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     fetcher.submit(selectedUser, { method: "PUT" });
   };
 
-  useEffect(() => {
-    if (!fetcher.data || !fetcher.data.message) {
-      return console.log("No Fetcher Data Available");
-    } // Ensure fetcher.data exists
-
-    console.log("Fetcher data message:", fetcher.data.message); // Debugging log
-
-    if (fetcher.data.message.includes("User added successfully")) {
-      console.log("this works!");
-      toast.success(fetcher.data.message);
-      setNewUser({
-        firstname: "",
-        middlename: "",
-        lastname: "",
-        suffix: "",
-        email: "",
-        id_number: "",
-        college: "",
-        departmentId: "",
-        userType: "",
-        username: "",
-        password: "",
-        file: null, // Reset to null
-      });
-      setIsDialogOpen(false);
-    } else if (fetcher.data.message.includes("User deleted successfully")) {
-      toast.success(fetcher.data.message);
-      setDeleteModal(false);
-    } else if (fetcher.data.message.includes("User approved successfully")) {
-      toast.success(fetcher.data.message);
-    } else if (fetcher.data.message.includes("User updated successfully")) {
-      toast.success(fetcher.data.message);
-      setUpdateModal(false);
-      setSelectedUser({
-        id: "",
-        firstname: "",
-        middlename: "",
-        lastname: "",
-        suffix: "",
-        email: "",
-        id_number: "",
-        college: "",
-        departmentId: "",
-        userType: "",
-        username: "",
-        password: "",
-      });
-    } else {
-      toast.error("An error occurred!");
-    }
-  }, [fetcher.data]);
-
+  // Handle update modal
   const handleUpdateModal = (data: any) => {
     setUpdateModal(true);
     setSelectedUser({
@@ -308,7 +168,6 @@ export default function UsersPage() {
     });
   };
 
-  console.log("state status", fetcher.state);
   const handleUpdateModalClose = () => {
     setUpdateModal(false);
     setSelectedUser({
@@ -326,9 +185,33 @@ export default function UsersPage() {
       password: "",
     });
   };
+
+  // Inside UsersPage component
+
+  // Toast messages
+  useEffect(() => {
+    if (!fetcher.data?.message) return;
+
+    const msg = fetcher.data.message;
+
+    console.log("fetcher data message", msg);
+    if (msg.includes("User deleted successfully")) {
+      toast.success(msg);
+      setDeleteModal(false);
+    } else if (msg.includes("User approved successfully")) {
+      toast.success(msg);
+      setApprovalModal(false);
+    } else if (msg.includes("User updated successfully")) {
+      toast.success(msg);
+      handleUpdateModalClose();
+    } else {
+      toast.error("An error occurred!");
+    }
+  }, [fetcher.data]);
+
   return (
     <div className="space-y-4 mt-5">
-      {/* Search & Add Invoice Button (Swapped Order) */}
+      {/* Search & Filter */}
       <div className="flex justify-between items-center">
         <div className="flex gap-5 items-center">
           <div className="relative w-64">
@@ -341,13 +224,11 @@ export default function UsersPage() {
               placeholder="Search users..."
               value={searchQuery}
               onChange={handleSearch}
-              className="w-full pl-10" // Add padding to prevent overlap
+              className="w-full pl-10"
             />
           </div>
-
           <div className="flex items-center gap-1">
             <Button
-              className="cursor-pointer"
               variant={selectedUsertype === "student" ? "default" : "secondary"}
               onClick={() =>
                 setSelectedUsertype((prev) =>
@@ -358,7 +239,6 @@ export default function UsersPage() {
               Students
             </Button>
             <Button
-              className="cursor-pointer"
               variant={selectedUsertype === "faculty" ? "default" : "secondary"}
               onClick={() =>
                 setSelectedUsertype((prev) =>
@@ -368,9 +248,7 @@ export default function UsersPage() {
             >
               Faculties
             </Button>
-
             <Button
-              className="cursor-pointer"
               variant={
                 selectedUsertype === "chairperson" ? "default" : "secondary"
               }
@@ -384,17 +262,14 @@ export default function UsersPage() {
             </Button>
           </div>
         </div>
-        <Button className="cursor-pointer" onClick={handleOpenDialog}>
-          Add User
-        </Button>
       </div>
 
-      {/* Invoice Table */}
+      {/* User Table */}
       <Table>
         <TableCaption>List of users</TableCaption>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[100px]">Name</TableHead>
+            <TableHead>Name</TableHead>
             <TableHead className="text-center">Id Number</TableHead>
             <TableHead className="text-center">Email</TableHead>
             <TableHead className="text-center">Type</TableHead>
@@ -415,11 +290,11 @@ export default function UsersPage() {
                   <Avatar>
                     <AvatarImage src={val.profilePicture} alt="@shadcn" />
                     <AvatarFallback>CN</AvatarFallback>
-                  </Avatar>{" "}
+                  </Avatar>
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span>{val.firstname}</span>
-                    <span>{val.middlename.split("")[0]}.</span>
-                    <span>{val.lastname} </span>
+                    <span>{val.middlename?.[0] ?? ""}.</span>
+                    <span>{val.lastname}</span>
                     <span>{val.suffix}</span>
                   </div>
                 </TableCell>
@@ -430,45 +305,28 @@ export default function UsersPage() {
                   {val.departmentId.acronym}
                 </TableCell>
                 <TableCell className="text-center">
-                  <div className="w-full h-full flex items-center justify-center">
+                  <div className="flex justify-center items-center w-full h-full">
                     <DropdownMenu>
                       <DropdownMenuTrigger className="text-lg cursor-pointer">
-                        {fetcher.state === "submitting" ? (
-                          <Loader2 className="animate-spin" />
-                        ) : (
-                          <BsThreeDotsVertical />
-                        )}
+                        <BsThreeDotsVertical />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-
                         {!val.approved && (
-                          <fetcher.Form
-                            method="post"
-                            action={`/dashboard/users/${val._id}/approve`}
-                          >
-                            <DropdownMenuItem
-                              asChild
-                              className="text-green-500"
+                          <DropdownMenuItem className="text-green-500" asChild>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              className="w-full justify-start"
+                              onClick={() => {
+                                setApprovalModal(true);
+                                setSelectedUserId(val._id);
+                              }}
                             >
-                              <Button
-                                type="submit"
-                                variant={"ghost"}
-                                className="w-full justify-start"
-                              >
-                                {fetcher.state === "submitting" ? (
-                                  <>
-                                    {" "}
-                                    <Loader2 className="animate-spin" />
-                                    Loading
-                                  </>
-                                ) : (
-                                  "Approved"
-                                )}
-                              </Button>
-                            </DropdownMenuItem>
-                          </fetcher.Form>
+                              Approved User
+                            </Button>
+                          </DropdownMenuItem>
                         )}
 
                         <DropdownMenuItem
@@ -533,285 +391,46 @@ export default function UsersPage() {
           </PaginationContent>
         </Pagination>
       )}
+      {/* approval modal
+       */}
+      <Dialog open={approvalModal} onOpenChange={setApprovalModal}>
+        <DialogContent className="w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Approve User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to approve this user?
+            </DialogDescription>
+          </DialogHeader>
 
-      {/* Add user Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
-          <fetcher.Form
-            className="flex flex-col gap-5"
-            method="POST"
-            encType="multipart/form-data" // Ensure the form can send files
-            onSubmit={handleSubmit}
-          >
-            <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
-            </DialogHeader>
+          <DialogFooter>
+            <Button
+              className="cursor-pointer"
+              variant="ghost"
+              onClick={() => setApprovalModal(false)}
+            >
+              Cancel
+            </Button>
 
-            <Tabs defaultValue="Details" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="Details">Details</TabsTrigger>
-                <TabsTrigger value="Education">Education</TabsTrigger>
-                <TabsTrigger value="Credentials">Credentials</TabsTrigger>
-              </TabsList>
-
-              {/* Details Tab */}
-              <TabsContent value="Details">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Student Details</CardTitle>
-                    <CardDescription>
-                      Enter correct student details.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label>Firstname</Label>
-                        <Input
-                          required
-                          defaultValue={newUser.firstname}
-                          onChange={(e) =>
-                            setNewUser({
-                              ...newUser,
-                              firstname: e.target.value,
-                            })
-                          }
-                          name="firstname"
-                          placeholder="Enter Firsname"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Middlename</Label>
-                        <Input
-                          required
-                          defaultValue={newUser.middlename}
-                          onChange={(e) =>
-                            setNewUser({
-                              ...newUser,
-                              middlename: e.target.value,
-                            })
-                          }
-                          name="middlename"
-                          placeholder="Enter Middlename"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-[1fr_100px] gap-3">
-                      <div className="space-y-2">
-                        <Label>Lastname</Label>
-                        <Input
-                          required
-                          defaultValue={newUser.lastname}
-                          onChange={(e) =>
-                            setNewUser({ ...newUser, lastname: e.target.value })
-                          }
-                          name="lastname"
-                          placeholder="Enter Lastname"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Suffix</Label>
-                        <Input
-                          defaultValue={newUser.suffix}
-                          onChange={(e) =>
-                            setNewUser({ ...newUser, suffix: e.target.value })
-                          }
-                          name="suffix"
-                          placeholder="e.g Jr, Sr"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Email</Label>
-                      <Input
-                        required
-                        defaultValue={newUser.email}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, email: e.target.value })
-                        }
-                        name="email"
-                        placeholder="sample@gmail.com"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Education Tab */}
-              <TabsContent value="Education">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Education</CardTitle>
-                    <CardDescription>
-                      Enter details of panel members for thesis evaluation.
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-2">
-                    <div className="space-y-3">
-                      <Label>Id Number</Label>
-
-                      <Input
-                        required
-                        name="id_number"
-                        defaultValue={newUser.id_number}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, id_number: e.target.value })
-                        }
-                        placeholder="Enter Valid Id Number"
-                      />
-                    </div>
-
-                    <div className="space-y-3 w-full">
-                      <Label>Department</Label>
-
-                      <Select
-                        required
-                        name="deparmentId"
-                        defaultValue={newUser.departmentId}
-                        onValueChange={(value) =>
-                          setNewUser({ ...newUser, departmentId: value })
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectLabel>Departments</SelectLabel>
-                            {departments.map((dept: any) => (
-                              <SelectItem key={dept._id} value={dept._id}>
-                                {dept.acronym}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-3 w-full">
-                      <Label>User Type</Label>
-
-                      <Select
-                        required
-                        name="userType"
-                        defaultValue={newUser.userType}
-                        onValueChange={(value) =>
-                          setNewUser({ ...newUser, userType: value })
-                        }
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select User Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            <SelectItem value="student">Student</SelectItem>
-                            <SelectItem value="chairperson">
-                              Chairperson
-                            </SelectItem>
-                            <SelectItem value="faculty">Faculty</SelectItem>
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Credentials Tab */}
-              <TabsContent value="Credentials">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>User Credentials</CardTitle>
-                    <CardDescription>
-                      Enter user credentials for user login.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="space-y-2">
-                      <Label>Profile Picture</Label>
-
-                      <Input
-                        required
-                        type="file"
-                        name="file"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] || null; // Ensure file is null if not selected
-                          setNewUser({ ...newUser, file: file });
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Username</Label>
-
-                      <Input
-                        required
-                        name="username"
-                        defaultValue={newUser.username}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, username: e.target.value })
-                        }
-                        placeholder="Enter Username"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Password</Label>
-                      <Input
-                        required
-                        name="password"
-                        defaultValue={newUser.password}
-                        onChange={(e) =>
-                          setNewUser({ ...newUser, password: e.target.value })
-                        }
-                        placeholder="Enter Password"
-                        type="password"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-
-            <DialogFooter>
+            <fetcher.Form
+              method="put"
+              action={`/dashboard/users/${selectedUserId}/approve`}
+            >
               <Button
-                type="button"
-                className="cursor-pointer"
-                variant="ghost"
-                onClick={handleCloseDialog}
-              >
-                Cancel
-              </Button>
-              <Button
-                disabled={
-                  newUser.firstname == "" ||
-                  newUser.middlename == "" ||
-                  newUser.lastname == "" ||
-                  newUser.email == "" ||
-                  newUser.id_number == "" ||
-                  newUser.departmentId == "" ||
-                  newUser.userType == "" ||
-                  newUser.username == "" ||
-                  newUser.password == "" ||
-                  fetcher.state === "submitting"
-                }
-                type="submit"
+                disabled={fetcher.state === "submitting"}
                 className="cursor-pointer"
               >
                 {fetcher.state === "submitting" ? (
                   <>
                     {" "}
                     <Loader2 className="animate-spin" />
-                    Please wait
+                    Approving
                   </>
                 ) : (
-                  "Add user"
+                  "Approve User"
                 )}
               </Button>
-            </DialogFooter>
-          </fetcher.Form>
+            </fetcher.Form>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -867,7 +486,7 @@ export default function UsersPage() {
             onSubmit={handleSubmitUpdate}
           >
             <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
+              <DialogTitle>Update User</DialogTitle>
             </DialogHeader>
 
             <Tabs defaultValue="Details" className="w-full">

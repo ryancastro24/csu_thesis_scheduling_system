@@ -47,6 +47,8 @@ export const action: ActionFunction = async ({ request }) => {
 
 const PanelApprovals = () => {
   const { panelApprovals } = useLoaderData();
+
+  console.log("panel approvals data:", panelApprovals);
   const navigate = useNavigate();
   return (
     <div className="grid grid-cols-3 gap-10">
@@ -56,11 +58,11 @@ const PanelApprovals = () => {
           className={`${val.status == "approve" ? "dark:bg-[#303030]" : ""}`}
         >
           <CardHeader>
-            <CardTitle>{val.proposalId.proposeTitle}</CardTitle>
+            <CardTitle>{val.proposalId?.proposeTitle}</CardTitle>
             <CardDescription>
-              Authors: {val.proposalId.student1Id?.lastname},{" "}
-              {val.proposalId.student2Id?.lastname},
-              {val.proposalId.student3Id?.lastname}
+              Authors: {val.proposalId?.student1Id?.lastname},{" "}
+              {val.proposalId?.student2Id?.lastname},
+              {val.proposalId?.student3Id?.lastname}
             </CardDescription>
           </CardHeader>
 

@@ -12,6 +12,7 @@ import { BsPersonFillDash } from "react-icons/bs";
 import { FileText } from "lucide-react";
 import { forms } from "@/lib/formsData";
 import { FaUserEdit } from "react-icons/fa";
+import { FaCircleInfo } from "react-icons/fa6";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -54,6 +55,7 @@ import { Form, ActionFunction, useNavigation } from "react-router-dom";
 import {
   addAdviserAcceptanceRequest,
   getUserAdviserAcceptanceRequest,
+  changeAdviserRequest,
 } from "@/backend_api/adviserAcceptance";
 import {
   createThesisSchedule,
@@ -75,18 +77,16 @@ export async function loader() {
 
   const user = localStorage.getItem("user");
   const userData: any = JSON.parse(user as any);
-  const adviserAcceptanaceData = await getUserAdviserAcceptanceRequest(
-    userData.id
-  );
+  const adviserAcceptanaceData: any[] = Array.isArray(
+    await getUserAdviserAcceptanceRequest(userData.id)
+  )
+    ? await getUserAdviserAcceptanceRequest(userData.id)
+    : [];
 
   const userThesisModel = await getUserThesisModel(userData.id);
   const userFinalThesisModel = await getUserFinalThesisModel(userData.id);
   const userPanelApprovals = await getUserPanelApprovals(userData.id);
 
-  console.log("userThesisModel:", userThesisModel);
-  console.log("userFinalThesisModel:", userFinalThesisModel);
-
-  console.log("adviser acceptance data:", adviserAcceptanaceData);
   return {
     students,
     faculty,
@@ -98,6 +98,7 @@ export async function loader() {
     userFinalThesisModel,
   };
 }
+
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
@@ -116,18 +117,35 @@ export const action: ActionFunction = async ({ request }) => {
     return panelApprovalRequestData;
   }
   if (data.transaction === "changePanel") {
-    console.log("changing panel formdata:", data);
     const changePanelData = await changePanel(data.id, data.oldPanelId, data);
 
     return changePanelData;
   }
 
   if (data.transaction === "addProposalRequest") {
-    console.log("proposal files data:", data);
-
     const thesisDocument = await createThesisSchedule(formData);
 
     return thesisDocument;
+  }
+
+  if (data.transaction === "newAdviserApproval") {
+    console.log("newAdviserApproval", data);
+
+    const adviserChangeRequest = await changeAdviserRequest(
+      data.id,
+      data.newAdviser
+    );
+
+    return adviserChangeRequest;
+  }
+
+  if (data.transaction === "newCoAdviserApproval") {
+    const adviserChangeRequest = await changeAdviserRequest(
+      data.id,
+      data.newAdviser
+    );
+
+    return adviserChangeRequest;
   }
 
   if (data.transaction === "addFinalRequest") {
@@ -156,11 +174,32 @@ const ThesisSection = () => {
   const [panelProposalTitle, setPanelProposalTitle] = useState<string>("");
   const [panelThesisFile, setPanelThesisFile] = useState<File | null>(null);
 
-  const [selectedFaculty, setSelectedFaculty] = useState<{
+  const adviserRequest = adviserAcceptanaceData.find(
+    (a: any) => a.role === "adviser"
+  );
+
+  const coAdviserRequest = adviserAcceptanaceData.find(
+    (a: any) => a.role === "coAdviser"
+  );
+
+  const [selectedNewAdviser, setSelectedNewAdviser] = useState<{
     id: string;
     name: string;
   } | null>(null);
 
+  const [selectedNewCoAdviser, setSelectedNewCoAdviser] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const [selectedFaculty, setSelectedFaculty] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [selectedCoFaculty, setSelectedCofaculty] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [selectedStudent1, setSelectedStudent1] = useState<{
     id: string;
     name: string;
@@ -196,6 +235,13 @@ const ThesisSection = () => {
     name: string;
   } | null>(null);
 
+  const selectedPanelIds = [
+    selectedFaculty1?.id,
+    selectedFaculty2?.id,
+    selectedFaculty3?.id,
+    selectedFaculty4?.id,
+  ].filter(Boolean) as string[];
+
   const [selectedNewPanel, setSelectedNewPanel] = useState<{
     id: string;
     name: string;
@@ -228,14 +274,20 @@ const ThesisSection = () => {
         </CardHeader>
 
         <CardContent className="flex flex-col gap-6">
-          {/* Step 1: Adviser Approval */}
-
-          {/* Step 1: Adviser Approval */}
           <div className="flex items-start gap-4">
+            {/* Status Indicator */}
             <div className="flex flex-col items-center">
-              <div className="rounded-full p-1 bg-primary text-white">
-                {adviserAcceptanaceData.status === "approve" ? (
-                  <CheckCircle className="h-5 w-5" />
+              <div
+                className={`rounded-full p-1 ${
+                  adviserRequest?.status === "approve" &&
+                  coAdviserRequest?.status === "approve"
+                    ? "bg-green-500"
+                    : "bg-primary"
+                } text-white`}
+              >
+                {adviserRequest?.status === "approve" &&
+                coAdviserRequest?.status === "approve" ? (
+                  <CheckCircle className="h-5 w-5 " />
                 ) : (
                   <Circle className="h-5 w-5" />
                 )}
@@ -243,15 +295,14 @@ const ThesisSection = () => {
               <div className="h-20 w-px bg-muted" />
             </div>
 
+            {/* Adviser / Co-Adviser Approval Section */}
             <div className="flex flex-col gap-4">
+              {/* Adviser Approval Dialog */}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button
                     className="w-[150px]"
-                    disabled={
-                      adviserAcceptanaceData.status == "approve" ||
-                      adviserAcceptanaceData.status == "pending"
-                    }
+                    disabled={adviserRequest || coAdviserRequest}
                     variant="outline"
                   >
                     Adviser Approval
@@ -265,6 +316,7 @@ const ThesisSection = () => {
                       thesis.
                     </DialogDescription>
                   </DialogHeader>
+
                   <Form method="POST" encType="multipart/form-data">
                     <Card>
                       <CardHeader>
@@ -273,7 +325,9 @@ const ThesisSection = () => {
                           Select student members of the thesis.
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="">
+
+                      <CardContent>
+                        {/* Hidden Inputs */}
                         <input
                           name="student1"
                           type="hidden"
@@ -294,51 +348,72 @@ const ThesisSection = () => {
                           type="hidden"
                           value={selectedFaculty?.id}
                         />
+                        <input
+                          name="coAdviser"
+                          type="hidden"
+                          value={selectedCoFaculty?.id || ""}
+                        />
 
+                        {/* Student Dropdowns */}
                         <div className="grid grid-cols-2 gap-5">
                           <SearchableDropdown
                             label="Student 1"
                             options={students}
-                            value={selectedStudent1} // Pass the entire object
-                            onValueChange={setSelectedStudent1} // Ensure it updates correctly
+                            value={selectedStudent1}
+                            onValueChange={setSelectedStudent1}
                           />
-
                           <SearchableDropdown
                             label="Student 2"
                             options={students}
-                            value={selectedStudent2} // Pass the entire object
-                            onValueChange={setSelectedStudent2} // Ensure it updates correctly
+                            value={selectedStudent2}
+                            onValueChange={setSelectedStudent2}
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-5">
+                        <div className="grid grid-cols-2 gap-5 mt-4">
                           <SearchableDropdown
                             label="Student 3"
-                            value={selectedStudent3} // Pass the entire object
-                            onValueChange={setSelectedStudent3} // Ensure it updates correctly
                             options={students}
+                            value={selectedStudent3}
+                            onValueChange={setSelectedStudent3}
+                          />
+                          <SearchableDropdown
+                            label="Adviser"
+                            options={thesisPanels}
+                            value={selectedFaculty}
+                            onValueChange={setSelectedFaculty}
+                            disabledIds={
+                              [selectedCoFaculty?.id].filter(
+                                Boolean
+                              ) as string[]
+                            }
                           />
 
                           <SearchableDropdown
-                            label="Adviser"
-                            value={selectedFaculty} // Pass the entire object
-                            onValueChange={setSelectedFaculty} // Ensure it updates correctly
+                            label="Co-Adviser"
                             options={thesisPanels}
+                            value={selectedCoFaculty}
+                            onValueChange={setSelectedCofaculty}
+                            disabledIds={
+                              [selectedFaculty?.id].filter(Boolean) as string[]
+                            }
                           />
                         </div>
 
+                        {/* Proposed Title & Thesis File */}
                         <div className="grid grid-cols-2 gap-5 mt-5">
                           <div className="flex flex-col gap-3">
                             <Label>Upload Proposed Title</Label>
                             <Input
-                              value={proposalTitle}
-                              onChange={(e) => setProposalTitle(e.target.value)}
-                              className="dark:bg-[#1b1b1b] dark:text-white"
                               type="text"
                               name="proposeTitle"
+                              value={proposalTitle}
+                              onChange={(e) => setProposalTitle(e.target.value)}
                               placeholder="Enter thesis proposed title"
+                              className="dark:bg-[#1b1b1b] dark:text-white"
                             />
                           </div>
+
                           <div className="flex flex-col gap-3">
                             <Label>Upload Thesis Initial Manuscript</Label>
                             <Input
@@ -358,23 +433,23 @@ const ThesisSection = () => {
                         </div>
                       </CardContent>
                     </Card>
+
                     <DialogFooter>
                       <Button
+                        type="submit"
+                        name="transaction"
+                        value="adviserApproval"
                         disabled={
                           navigation.state === "submitting" ||
-                          selectedStudent1 === null ||
-                          proposalTitle === "" ||
-                          selectedFaculty === null ||
-                          adviserThesisFile === null
+                          !selectedStudent1 ||
+                          !proposalTitle ||
+                          !selectedFaculty ||
+                          !adviserThesisFile
                         }
-                        name="transaction"
-                        value={"adviserApproval"}
-                        type="submit"
-                        className="mt-4"
                       >
                         {navigation.state === "submitting" ? (
                           <>
-                            <Loader2 className="animate-spin" />
+                            <Loader2 className="animate-spin mr-2" />
                             Please wait
                           </>
                         ) : (
@@ -386,32 +461,159 @@ const ThesisSection = () => {
                 </DialogContent>
               </Dialog>
 
-              {adviserAcceptanaceData !== "" && (
-                <span className="text-sm italic">
-                  Adviser acceptanace request is {adviserAcceptanaceData.status}{" "}
-                  {adviserAcceptanaceData.status === "reject" ? (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <span className="text-orange-500 cursor-pointer">
-                          (Show Reason)
-                        </span>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
+              {/* Adviser Status */}
+              {adviserRequest && (
+                <span className="text-sm italic flex items-center gap-1">
+                  Adviser request
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <span className="cursor-pointer text-xs text-orange-500">
+                        <FaCircleInfo />
+                      </span>
+                    </AlertDialogTrigger>
+
+                    <AlertDialogContent>
+                      <Form method="POST">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Proposal Rejected</AlertDialogTitle>
+                          <AlertDialogTitle>Request details</AlertDialogTitle>
+
                           <AlertDialogDescription>
-                            {adviserAcceptanaceData.remarks}
+                            <div className="flex flex-col gap-2">
+                              <span>
+                                Adviser: {adviserRequest.adviserId.firstname}{" "}
+                                {adviserRequest.adviserId.lastname}{" "}
+                                {adviserRequest.adviserId.suffix}
+                              </span>
+
+                              <span>Status: {adviserRequest?.status}</span>
+                              {adviserRequest?.status === "reject" && (
+                                <div className="flex flex-col gap-2">
+                                  <span>
+                                    Reason: <strong>Declined</strong>
+                                  </span>
+
+                                  <input
+                                    name="id"
+                                    type="hidden"
+                                    value={adviserRequest?._id}
+                                  />
+                                  <input
+                                    name="newAdviser"
+                                    type="hidden"
+                                    value={selectedNewAdviser?.id}
+                                  />
+
+                                  <SearchableDropdown
+                                    label="Select New Adviser"
+                                    options={thesisPanels}
+                                    value={selectedNewAdviser}
+                                    onValueChange={setSelectedNewAdviser}
+                                  />
+                                </div>
+                              )}
+                            </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
+                        <AlertDialogFooter className="flex items-center gap-2">
+                          {adviserRequest?.status === "reject" && (
+                            <Button
+                              type="submit"
+                              name="transaction"
+                              value="newAdviserApproval"
+                              disabled={navigation.state === "submitting"}
+                            >
+                              {navigation.state === "submitting" ? (
+                                <>
+                                  <Loader2 className="animate-spin mr-2" />
+                                  Please wait
+                                </>
+                              ) : (
+                                "Request for approval"
+                              )}
+                            </Button>
+                          )}
 
-                        <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                         </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  ) : (
-                    ""
-                  )}
+                      </Form>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </span>
+              )}
+
+              {coAdviserRequest && (
+                <span className="text-sm italic flex items-center gap-1">
+                  CoAdviser request
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <span className="cursor-pointer text-xs text-orange-500">
+                        <FaCircleInfo />
+                      </span>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <Form method="POST">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Request details</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            <div className="flex flex-col gap-2">
+                              <span>
+                                Adviser: {coAdviserRequest.adviserId.firstname}{" "}
+                                {coAdviserRequest.adviserId.lastname}{" "}
+                                {coAdviserRequest.adviserId.suffix}
+                              </span>
+
+                              <span>Status: {coAdviserRequest?.status}</span>
+                              {coAdviserRequest?.status === "reject" && (
+                                <div className="flex flex-col gap-2">
+                                  <span>
+                                    Reason: <strong>Declined</strong>
+                                  </span>
+
+                                  <input
+                                    name="id"
+                                    type="hidden"
+                                    value={coAdviserRequest?._id}
+                                  />
+                                  <input
+                                    name="newAdviser"
+                                    type="hidden"
+                                    value={selectedNewAdviser?.id}
+                                  />
+
+                                  <SearchableDropdown
+                                    label="Select New Co Adviser"
+                                    options={thesisPanels}
+                                    value={selectedNewCoAdviser}
+                                    onValueChange={setSelectedNewCoAdviser}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          {coAdviserRequest?.status === "reject" && (
+                            <Button
+                              type="submit"
+                              name="transaction"
+                              value="newCoAdviserApproval"
+                              disabled={navigation.state === "submitting"}
+                            >
+                              {navigation.state === "submitting" ? (
+                                <>
+                                  <Loader2 className="animate-spin mr-2" />
+                                  Please wait
+                                </>
+                              ) : (
+                                "Request for approval"
+                              )}
+                            </Button>
+                          )}
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        </AlertDialogFooter>
+                      </Form>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </span>
               )}
             </div>
@@ -422,7 +624,8 @@ const ThesisSection = () => {
             <div className="flex flex-col items-center">
               <div
                 className={`rounded-full p-1 ${
-                  adviserAcceptanaceData !== ""
+                  adviserRequest?.status === "approve" ||
+                  coAdviserRequest?.status === "approve"
                     ? "bg-primary text-white"
                     : "bg-muted text-muted-foreground"
                 }`}
@@ -446,8 +649,10 @@ const ThesisSection = () => {
                     className="w-[150px]"
                     variant="outline"
                     disabled={
-                      adviserAcceptanaceData === "" ||
-                      adviserAcceptanaceData?.status === "pending" ||
+                      adviserRequest?.status !== "approve" ||
+                      coAdviserRequest?.status !== "approve" ||
+                      adviserRequest === null ||
+                      coAdviserRequest === null ||
                       adviserAcceptanaceData?.status === "reject" ||
                       userPanelApprovals[0]?.status === "pending" ||
                       userPanelApprovals[1]?.status === "pending" ||
@@ -482,26 +687,35 @@ const ThesisSection = () => {
                       <CardContent className="space-y-2">
                         <div className="grid grid-cols-2 gap-5">
                           <SearchableDropdown
-                            label="Chairperson"
-                            value={selectedFaculty1} // Pass the entire object
-                            onValueChange={setSelectedFaculty1} // Ensure it updates correctly
+                            label="Panel Chairperson"
                             options={thesisPanels}
+                            value={selectedFaculty1}
+                            onValueChange={setSelectedFaculty1}
+                            disabledIds={selectedPanelIds.filter(
+                              (id) => id !== selectedFaculty1?.id
+                            )}
                           />
 
                           <SearchableDropdown
-                            label="Panel 2"
+                            label="Panel Member"
                             value={selectedFaculty2} // Pass the entire object
                             onValueChange={setSelectedFaculty2} // Ensure it updates correctly
                             options={thesisPanels}
+                            disabledIds={selectedPanelIds.filter(
+                              (id) => id !== selectedFaculty2?.id
+                            )}
                           />
                         </div>
 
                         <div className="grid grid-cols-2 gap-5">
                           <SearchableDropdown
-                            label="Panel 3"
+                            label="Panel Member"
                             value={selectedFaculty3} // Pass the entire object
                             onValueChange={setSelectedFaculty3} // Ensure it updates correctly
                             options={thesisPanels}
+                            disabledIds={selectedPanelIds.filter(
+                              (id) => id !== selectedFaculty3?.id
+                            )}
                           />
 
                           <SearchableDropdown
@@ -509,12 +723,15 @@ const ThesisSection = () => {
                             value={selectedFaculty4} // Pass the entire object
                             onValueChange={setSelectedFaculty4} // Ensure it updates correctly
                             options={thesisPanels}
+                            disabledIds={selectedPanelIds.filter(
+                              (id) => id !== selectedFaculty4?.id
+                            )}
                           />
                         </div>
                         <input
                           name="proposalId"
                           type="hidden"
-                          value={adviserAcceptanaceData?._id}
+                          value={adviserRequest?._id}
                         />
                         <input
                           name="faculty1"
@@ -738,7 +955,7 @@ const ThesisSection = () => {
                     ? "bg-primary text-white"
                     : "bg-muted text-muted-foreground"
                 }
-                  `}
+                    `}
               >
                 {userPanelApprovals.length !== 0 &&
                 userPanelApprovals.every(
@@ -819,7 +1036,7 @@ const ThesisSection = () => {
         }`}
       >
         <CardHeader>
-          <CardTitle>Proposal Section</CardTitle>
+          <CardTitle>Capstone Proposal Defense</CardTitle>
           <CardDescription>
             Start your thesis journey by finding a new adviser and panels.
           </CardDescription>
@@ -830,7 +1047,7 @@ const ThesisSection = () => {
             <Input type="hidden" name="userId" value={userData.id} />
             <div className="mt-5">
               <div className="flex flex-col gap-3">
-                <Label>Upload Manuscript</Label>
+                <Label>Upload Thesis Manuscript</Label>
                 <Input
                   name="thesisFile"
                   className="dark:bg-[#1b1b1b]"
@@ -849,7 +1066,7 @@ const ThesisSection = () => {
               </div>
 
               <div className="flex flex-col gap-3 mt-8">
-                <Label>Upload Approval Files</Label>
+                <Label>Upload Thesis Forms</Label>
                 <Input
                   name="approvalFile"
                   className="dark:bg-[#1b1b1b]"
@@ -871,10 +1088,10 @@ const ThesisSection = () => {
 
           <CardFooter className="flex justify-between items-center">
             {/* <Button disabled variant="secondary">
-              Defended
-            </Button> */}
+                Defended
+              </Button> */}
 
-            {userThesisModel.defended ? (
+            {userThesisModel.defended === "defended" ? (
               <div className="flex flex-col gap-4">
                 <Button variant={"secondary"} disabled>
                   Thesis Succesfully Defended
@@ -926,7 +1143,7 @@ const ThesisSection = () => {
               </Button>
             )}
 
-            {!userThesisModel.defended && (
+            {userThesisModel.defended !== "defended" && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button size={"icon"} variant={"outline"}>
@@ -1047,11 +1264,13 @@ const ThesisSection = () => {
 
       <Card
         className={`dark:bg-[#303030] ${
-          !userThesisModel.defended ? "pointer-events-none opacity-50" : ""
+          userThesisModel.defended !== "defended"
+            ? "pointer-events-none opacity-50"
+            : ""
         }`}
       >
         <CardHeader>
-          <CardTitle>Final Section</CardTitle>
+          <CardTitle>Thesis Final Defense</CardTitle>
           <CardDescription>
             Start your thesis journey by finding new adviser and panels
           </CardDescription>
@@ -1066,22 +1285,22 @@ const ThesisSection = () => {
             />
             <div className="mt-5">
               <div className="flex flex-col gap-3">
-                <Label>Upload Manuscript</Label>
+                <Label>Upload Thesis Manuscript</Label>
                 <Input
                   name="thesisFile"
                   className="dark:bg-[#1b1b1b]"
                   type="file"
-                  disabled={!userThesisModel.defended}
+                  disabled={userThesisModel.defended !== "defended"}
                 />
               </div>
 
               <div className="flex flex-col gap-3 mt-8">
-                <Label>Upload Approval Files</Label>
+                <Label>Upload Thesis Forms</Label>
                 <Input
                   name="approvalFile"
                   className="dark:bg-[#1b1b1b]"
                   type="file"
-                  disabled={!userThesisModel.defended}
+                  disabled={userThesisModel.defended !== "defended"}
                 />
               </div>
             </div>
@@ -1089,10 +1308,10 @@ const ThesisSection = () => {
 
           <CardFooter className="flex justify-between items-center">
             {/* <Button disabled variant="secondary">
-              Defended
-            </Button> */}
+                Defended
+              </Button> */}
 
-            {userFinalThesisModel.defended ? (
+            {userFinalThesisModel.defended === "defended" ? (
               <div className="flex flex-col gap-4">
                 <Button variant={"secondary"} disabled>
                   Thesis Succesfully Defended
@@ -1280,53 +1499,77 @@ interface SearchableDropdownProps {
     suffix?: string;
   }[];
 
-  value: { id: string; name: string } | null; // Expect an object, not a string
-  onValueChange: (value: { id: string; name: string }) => void;
+  value: { id: string; name: string } | null;
+  onValueChange: (value: { id: string; name: string } | null) => void;
+
+  disabledIds?: string[]; // 👈 NEW
 }
 
 function SearchableDropdown({
   label,
   options,
-
   value,
   onValueChange,
+  disabledIds = [],
 }: SearchableDropdownProps) {
   const [open, setOpen] = useState(false);
 
   return (
     <div className="space-y-1">
       <Label>{label}</Label>
+
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="w-full justify-between">
-            {value ? value.name : `Select ${label}`}{" "}
-            {/* Ensure the name is displayed */}
+            {value ? value.name : `Select ${label}`}
           </Button>
         </PopoverTrigger>
+
         <PopoverContent className="w-full p-0">
           <Command>
             <CommandInput placeholder={`Search ${label}`} />
-            <CommandList aria-required>
+            <CommandList>
               <CommandGroup>
+                {/* NONE OPTION */}
+                <CommandItem
+                  onSelect={() => {
+                    onValueChange(null);
+                    setOpen(false);
+                  }}
+                  className="cursor-pointer text-muted-foreground"
+                >
+                  None
+                </CommandItem>
+
                 {options.map((option) => {
                   const fullName = `${option.firstname} ${
                     option.middlename ? option.middlename[0] + "." : ""
                   } ${option.lastname} ${option.suffix ?? ""}`.trim();
+
+                  const isDisabled = disabledIds.includes(option._id);
+
                   return (
                     <CommandItem
                       key={option._id}
+                      disabled={isDisabled}
                       onSelect={() => {
-                        const selectedValue = {
+                        if (isDisabled) return;
+                        onValueChange({
                           id: option._id,
                           name: fullName,
-                        };
-                        onValueChange(selectedValue); // Persist selection
-
+                        });
                         setOpen(false);
                       }}
-                      className="cursor-pointer"
+                      className={`cursor-pointer ${
+                        isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     >
                       {fullName}
+                      {isDisabled && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Selected
+                        </span>
+                      )}
                     </CommandItem>
                   );
                 })}

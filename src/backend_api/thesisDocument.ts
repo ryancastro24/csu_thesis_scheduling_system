@@ -6,6 +6,7 @@ export async function createThesisSchedule(data: any) {
       `${baseAPI}/thesisDocuments/thesisDocumentData/data`,
       data
     );
+
     return response.data; // Return the created department data
   } catch (error) {
     console.error("Error adding department:", error);
@@ -31,6 +32,30 @@ export async function getThesisDocuments(department: string) {
     const response = await axios.get(`${baseAPI}/thesisDocuments`, {
       params: { department }, // sends ?department=BSCS
     });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching thesis documents:", error);
+    throw error;
+  }
+}
+
+export async function getAllFinalThesisDocuments() {
+  try {
+    const response = await axios.get(
+      `${baseAPI}/thesisDocuments/getAllFinalizaedThesis/data`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching thesis documents:", error);
+    throw error;
+  }
+}
+
+export async function getAllThesisData() {
+  try {
+    const response = await axios.get(
+      `${baseAPI}/thesisDocuments/getAllThesisData/data`
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching thesis documents:", error);
@@ -152,10 +177,11 @@ export async function getThesisByAdviser(id: string | undefined) {
   }
 }
 
-export async function updateThesisDefended(id: any) {
+export async function updateThesisDefended(id: any, status: any) {
   try {
     const response = await axios.put(
-      `${baseAPI}/thesisDocuments/thesisModel/${id}/defended`
+      `${baseAPI}/thesisDocuments/thesisModel/${id}/defended`,
+      { status }
     );
     return response.data;
   } catch (error) {

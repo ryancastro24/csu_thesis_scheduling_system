@@ -36,10 +36,7 @@ import { action as DestroyUser } from "./destroy/destroyUser";
 import { action as DestroySchedule } from "./destroy/destroySchedule";
 import { Toaster } from "@/components/ui/sonner";
 import UsersErrorPage from "./ErrorResponses/UsersErrorPage";
-import LandingPage, {
-  loader as LandingPageLoader,
-  action as LandingPageAction,
-} from "./pages/LandingPage";
+import LandingPage from "./pages/LandingPage";
 import { isAuthenticated } from "./utils/auth";
 import { redirect } from "react-router-dom";
 import Favorites, {
@@ -66,6 +63,9 @@ import AdviseeComponent, {
   loader as AdviseeComponentLoader,
   action as AdviseeComponentAction,
 } from "./pages/AdviseeComponent";
+import StudentActualDefense, {
+  loader as StudentActualDefenseLoader,
+} from "./pages/StudentActualDefense";
 const landingPageLoader = () => {
   if (isAuthenticated()) {
     return redirect("/dashboard"); // Redirect to dashboard if already logged in
@@ -90,8 +90,6 @@ const router = createBrowserRouter([
       {
         element: <LandingPage />,
         index: true,
-        loader: LandingPageLoader,
-        action: LandingPageAction,
       },
       {
         path: "users",
@@ -186,6 +184,12 @@ const router = createBrowserRouter([
         element: <Favorites />,
         loader: FavoritesLoader,
         action: FavoritesAction,
+      },
+
+      {
+        path: "studentActualDefense",
+        element: <StudentActualDefense />,
+        loader: StudentActualDefenseLoader,
       },
 
       {

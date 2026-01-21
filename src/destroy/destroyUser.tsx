@@ -5,6 +5,7 @@ export const action: ActionFunction = async ({ params }) => {
     console.log(params.userId);
     const data = await deleteUserData(params.userId);
 
+    console.log("delete user action data", data);
     return data;
   }
   return redirect("/");

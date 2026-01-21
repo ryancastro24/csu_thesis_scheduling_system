@@ -53,7 +53,11 @@ const LogsPage = () => {
                   : "text-red-500"
               }`}
             >
-              {notification.status}
+              {notification.status === "approve"
+                ? "Approved"
+                : notification.status === "reject"
+                ? "Rejected"
+                : "Pending"}
             </span>
           </CardFooter>
         </Card>

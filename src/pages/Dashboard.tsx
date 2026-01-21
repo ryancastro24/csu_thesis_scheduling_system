@@ -16,7 +16,7 @@ import { IoIosDocument } from "react-icons/io";
 import { FaCodePullRequest } from "react-icons/fa6";
 import { FaUserFriends } from "react-icons/fa";
 import { FaUserGraduate } from "react-icons/fa";
-
+import { BsCalendarEventFill } from "react-icons/bs";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -342,19 +342,34 @@ const Dashboard = () => {
             )}
 
             {["chairperson"].includes(userData.userType) && (
-              <li
-                onClick={() => navigate("/dashboard/schedules")}
-                className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
-                  location.pathname === "/dashboard/schedules"
-                    ? "bg-orange-500 text-white"
-                    : ""
-                }`}
-              >
-                <span className="text-lg">
-                  <AiFillSchedule />
-                </span>
-                Schedules
-              </li>
+              <>
+                <li
+                  onClick={() => navigate("/dashboard/schedules")}
+                  className={`hover:bg-orange-500 hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 ${
+                    location.pathname === "/dashboard/schedules"
+                      ? "bg-orange-500 text-white"
+                      : ""
+                  }`}
+                >
+                  <span className="text-lg">
+                    <AiFillSchedule />
+                  </span>
+                  Schedules
+                </li>
+                <li
+                  onClick={() => navigate("/dashboard/studentActualDefense")}
+                  className={`hover:bg-orange-500 ${
+                    location.pathname === "/dashboard/studentActualDefense"
+                      ? "bg-orange-500 text-white"
+                      : ""
+                  } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
+                >
+                  <span className="text-lg">
+                    <BsCalendarEventFill size={15} />{" "}
+                  </span>{" "}
+                  Today’s Defenses
+                </li>
+              </>
             )}
 
             {["chairperson", "admin"].includes(userData.userType) && (
@@ -447,6 +462,10 @@ const Dashboard = () => {
 
               {location.pathname === "/dashboard/proposals" && (
                 <h1 className="ml-3 mt-3">Thesis Proposals</h1>
+              )}
+
+              {location.pathname === "/dashboard/studentActualDefense" && (
+                <h1 className="ml-3 mt-3">Defense Schedulse Today</h1>
               )}
               {location.pathname === "/dashboard/panelProposals" && (
                 <h1 className="ml-3 mt-3">Panel Proposals</h1>
