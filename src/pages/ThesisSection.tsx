@@ -262,6 +262,13 @@ const ThesisSection = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const adviserApproved = adviserRequest?.status === "approve";
+
+  const coAdviserApproved =
+    !coAdviserRequest || coAdviserRequest.status === "approve";
+
+  const isApproved = adviserApproved && coAdviserApproved;
+
   return (
     <div className="grid grid-cols-3 gap-5">
       <Card className="dark:bg-[#303030]">
@@ -279,15 +286,11 @@ const ThesisSection = () => {
             <div className="flex flex-col items-center">
               <div
                 className={`rounded-full p-1 ${
-                  adviserRequest?.status === "approve" &&
-                  coAdviserRequest?.status === "approve"
-                    ? "bg-green-500"
-                    : "bg-primary"
+                  isApproved ? "bg-green-500" : "bg-primary"
                 } text-white`}
               >
-                {adviserRequest?.status === "approve" &&
-                coAdviserRequest?.status === "approve" ? (
-                  <CheckCircle className="h-5 w-5 " />
+                {isApproved ? (
+                  <CheckCircle className="h-5 w-5" />
                 ) : (
                   <Circle className="h-5 w-5" />
                 )}
@@ -650,7 +653,8 @@ const ThesisSection = () => {
                     variant="outline"
                     disabled={
                       adviserRequest?.status !== "approve" ||
-                      coAdviserRequest?.status !== "approve" ||
+                      (coAdviserRequest &&
+                        coAdviserRequest.status !== "approve") ||
                       adviserRequest === null ||
                       coAdviserRequest === null ||
                       adviserAcceptanaceData?.status === "reject" ||
