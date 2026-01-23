@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { getAdviserAcceptanceRequests } from "@/backend_api/adviserAcceptance";
 import {
   Card,
@@ -29,140 +30,212 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { approvedProposal } from "@/backend_api/adviserAcceptance";
+
+/* ---------------- LOADER ---------------- */
 export async function loader() {
   const user = localStorage.getItem("user");
   const userData: any = JSON.parse(user as any);
+
   const adviserAcceptanaceData = await getAdviserAcceptanceRequests(
-    userData.id
+    userData.id,
   );
 
-  console.log("adviser acceptance data:", adviserAcceptanaceData);
-  return { userData, adviserAcceptanaceData };
+  return { adviserAcceptanaceData };
 }
 
+/* ---------------- ACTION ---------------- */
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
-  // Pass the original FormData directly
 
-  console.log(data);
-
-  if (data.transaction === "approve") {
-    const approvalProposalData = await approvedProposal(data.id, data);
-    return approvalProposalData;
-  }
-
-  if (data.transaction === "reject") {
-    const approvalProposalData = await approvedProposal(data.id, data);
-    console.log("returned proposal status:", approvalProposalData);
-    return approvalProposalData;
+  if (data.transaction === "approve" || data.transaction === "reject") {
+    return await approvedProposal(data.id, data);
   }
 };
+
+/* ---------------- COMPONENT ---------------- */
 const Proposals = () => {
-  const { adviserAcceptanaceData } = useLoaderData();
+  const { adviserAcceptanaceData } = useLoaderData() as any;
   const navigate = useNavigate();
+
+  const [roleFilter, setRoleFilter] = useState<"all" | "adviser" | "coAdviser">(
+    "all",
+  );
+
+  /* -------- FILTER + SORT -------- */
+  const filteredAndSortedData = adviserAcceptanaceData
+    .filter((item: any) => {
+      if (roleFilter === "all") return true;
+      return item.role === roleFilter; // adviser | coAdviser
+    })
+    .sort((a: any, b: any) => {
+      // pending always first
+      if (a.status === "pending" && b.status !== "pending") return -1;
+      if (a.status !== "pending" && b.status === "pending") return 1;
+      return 0;
+    });
+
+  /* -------- STATUS BADGE STYLE -------- */
+  const statusStyle = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-500 text-black";
+      case "approve":
+        return "bg-green-500 text-white";
+      case "reject":
+        return "bg-red-500 text-white";
+      default:
+        return "bg-gray-400 text-white";
+    }
+  };
+
   return (
-    <div className="grid grid-cols-3 gap-5">
-      {adviserAcceptanaceData.map((val: any) => (
-        <Card
-          key={val._id}
-          className={`${val.status == "approve" ? "dark:bg-[#303030]" : ""}`}
+    <>
+      {/* -------- FILTER BUTTONS -------- */}
+      <div className="flex gap-3 mb-5">
+        <Button
+          variant={roleFilter === "all" ? "default" : "secondary"}
+          onClick={() => setRoleFilter("all")}
         >
-          <CardHeader>
-            <CardTitle>{val.proposeTitle}</CardTitle>
-            <CardDescription>
-              Authors: {val.student1Id?.lastname}, {val.student2Id?.lastname},
-              {val.student3Id?.lastname}
-            </CardDescription>
-          </CardHeader>
+          All
+        </Button>
 
-          <CardContent className="flex flex-col gap-3">
-            <p className="text-sm">Download the file to view the content.</p>
+        <Button
+          variant={roleFilter === "adviser" ? "default" : "secondary"}
+          onClick={() => setRoleFilter("adviser")}
+        >
+          Adviser
+        </Button>
 
-            <Button
-              onClick={() =>
-                navigate(`/dashboard/view`, {
-                  state: {
-                    thesisFile: val.thesisFile,
-                    title: val.proposeTitle,
-                    student1: val.student1Id,
-                    student2: val.student2Id,
-                    student3: val.student3Id,
-                  },
-                })
-              }
-              className="w-full flex items-center gap-2"
-              variant="secondary"
-            >
-              <FaEye /> View Content
-            </Button>
-          </CardContent>
+        <Button
+          variant={roleFilter === "coAdviser" ? "default" : "secondary"}
+          onClick={() => setRoleFilter("coAdviser")}
+        >
+          Co-Adviser
+        </Button>
+      </div>
 
-          <CardFooter>
-            {val.status == "approve" ? (
-              <Button disabled variant={"secondary"}>
-                Proposal Approved
+      {/* -------- CARDS -------- */}
+      <div className="grid grid-cols-3 gap-5">
+        {filteredAndSortedData.map((val: any) => (
+          <Card
+            key={val._id}
+            className={val.status === "approve" ? "dark:bg-[#303030]" : ""}
+          >
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <CardTitle>{val.proposeTitle}</CardTitle>
+
+                {/* STATUS BADGE */}
+                <span
+                  className={`text-xs px-2 py-1 rounded ${statusStyle(
+                    val.status,
+                  )}`}
+                >
+                  {val.status.toUpperCase()}
+                </span>
+              </div>
+
+              <CardDescription>
+                Authors: {val.student1Id?.lastname}, {val.student2Id?.lastname},{" "}
+                {val.student3Id?.lastname}
+              </CardDescription>
+
+              <CardDescription>
+                Role:{" "}
+                <span className="font-semibold capitalize">{val.role}</span>
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="flex flex-col gap-3">
+              <p className="text-sm">Download the file to view the content.</p>
+
+              <Button
+                onClick={() =>
+                  navigate(`/dashboard/view`, {
+                    state: {
+                      thesisFile: val.thesisFile,
+                      title: val.proposeTitle,
+                      student1: val.student1Id,
+                      student2: val.student2Id,
+                      student3: val.student3Id,
+                    },
+                  })
+                }
+                className="w-full flex items-center gap-2"
+                variant="secondary"
+              >
+                <FaEye /> View Content
               </Button>
-            ) : (
-              <div className="flex items-center  gap-5">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Reject</Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Thesis rejected</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Please type in the reason why you reject this proposal
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
+            </CardContent>
 
-                    <Form method="PUT">
-                      <Textarea
-                        name="remarks"
-                        placeholder="Type your message here."
-                      />
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <CardFooter>
+              {val.status === "approve" ? (
+                <Button disabled variant="secondary">
+                  Proposal Approved
+                </Button>
+              ) : (
+                <div className="flex gap-5">
+                  {/* -------- REJECT -------- */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive">Reject</Button>
+                    </AlertDialogTrigger>
 
-                        <Input type="hidden" value={"reject"} name="status" />
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Thesis rejected</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Please provide the reason for rejection.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+
+                      <Form method="PUT">
+                        <Textarea
+                          name="remarks"
+                          placeholder="Type your message here."
+                        />
+
+                        <Input type="hidden" name="status" value="reject" />
                         <Input
                           type="hidden"
-                          value={"reject"}
                           name="transaction"
+                          value="reject"
                         />
-                        <Input type="hidden" value={val._id} name="id" />
-                        <AlertDialogAction
-                          name="transaction"
-                          type="submit"
-                          value={"reject"}
-                        >
-                          Reject Proposal
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </Form>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Input type="hidden" name="id" value={val._id} />
 
-                <Form method="PUT">
-                  <Input type="hidden" value={"approve"} name="status" />
-                  <Input type="hidden" value={val._id} name="id" />
-                  <Button
-                    name="transaction"
-                    value={"approve"}
-                    className="bg-green-500 cursor-pointer hover:bg-green-600"
-                  >
-                    Approved
-                  </Button>
-                </Form>
-              </div>
-            )}
-          </CardFooter>
-        </Card>
-      ))}
-    </div>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction type="submit">
+                            Reject Proposal
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </Form>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
+                  {/* -------- APPROVE -------- */}
+                  <Form method="PUT">
+                    <Input type="hidden" name="status" value="approve" />
+                    <Input type="hidden" name="id" value={val._id} />
+
+                    <Button
+                      name="transaction"
+                      value="approve"
+                      className="bg-green-500 hover:bg-green-600"
+                    >
+                      Approve
+                    </Button>
+                  </Form>
+                </div>
+              )}
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+    </>
   );
 };
 

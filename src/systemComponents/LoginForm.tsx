@@ -62,7 +62,7 @@ import { useFetcher } from "react-router-dom";
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
 
   console.log(data);
@@ -95,7 +95,7 @@ export function LoginForm({}: React.ComponentPropsWithoutRef<"div">) {
   const [resetPasswordFlag, setResetPasswordFlag] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [signupErrorMessage, setSignupErrorMessage] = useState<string | null>(
-    null
+    null,
   );
 
   console.log(signupErrorMessage);
@@ -834,7 +834,6 @@ export function LoginForm({}: React.ComponentPropsWithoutRef<"div">) {
                     value={"addUser"}
                     disabled={
                       newUser.firstname == "" ||
-                      newUser.middlename == "" ||
                       newUser.lastname == "" ||
                       newUser.email == "" ||
                       newUser.id_number == "" ||
