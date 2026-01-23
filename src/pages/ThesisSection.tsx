@@ -78,7 +78,7 @@ export async function loader() {
   const user = localStorage.getItem("user");
   const userData: any = JSON.parse(user as any);
   const adviserAcceptanaceData: any[] = Array.isArray(
-    await getUserAdviserAcceptanceRequest(userData.id)
+    await getUserAdviserAcceptanceRequest(userData.id),
   )
     ? await getUserAdviserAcceptanceRequest(userData.id)
     : [];
@@ -102,7 +102,7 @@ export async function loader() {
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
 
   // Pass the original FormData directly
@@ -133,7 +133,7 @@ export const action: ActionFunction = async ({ request }) => {
 
     const adviserChangeRequest = await changeAdviserRequest(
       data.id,
-      data.newAdviser
+      data.newAdviser,
     );
 
     return adviserChangeRequest;
@@ -142,7 +142,7 @@ export const action: ActionFunction = async ({ request }) => {
   if (data.transaction === "newCoAdviserApproval") {
     const adviserChangeRequest = await changeAdviserRequest(
       data.id,
-      data.newAdviser
+      data.newAdviser,
     );
 
     return adviserChangeRequest;
@@ -175,11 +175,11 @@ const ThesisSection = () => {
   const [panelThesisFile, setPanelThesisFile] = useState<File | null>(null);
 
   const adviserRequest = adviserAcceptanaceData.find(
-    (a: any) => a.role === "adviser"
+    (a: any) => a.role === "adviser",
   );
 
   const coAdviserRequest = adviserAcceptanaceData.find(
-    (a: any) => a.role === "coAdviser"
+    (a: any) => a.role === "coAdviser",
   );
 
   const [selectedNewAdviser, setSelectedNewAdviser] = useState<{
@@ -387,7 +387,7 @@ const ThesisSection = () => {
                             onValueChange={setSelectedFaculty}
                             disabledIds={
                               [selectedCoFaculty?.id].filter(
-                                Boolean
+                                Boolean,
                               ) as string[]
                             }
                           />
@@ -425,10 +425,10 @@ const ThesisSection = () => {
                               accept=".pdf,.doc,.docx"
                               className="dark:bg-[#1b1b1b]"
                               onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>
+                                e: React.ChangeEvent<HTMLInputElement>,
                               ) =>
                                 setAdviserThesisFile(
-                                  e.target.files?.[0] || null
+                                  e.target.files?.[0] || null,
                                 )
                               }
                             />
@@ -580,7 +580,7 @@ const ThesisSection = () => {
                                   <input
                                     name="newAdviser"
                                     type="hidden"
-                                    value={selectedNewAdviser?.id}
+                                    value={selectedNewCoAdviser?.id}
                                   />
 
                                   <SearchableDropdown
@@ -635,7 +635,7 @@ const ThesisSection = () => {
               >
                 {userPanelApprovals.length !== 0 &&
                 userPanelApprovals.every(
-                  (panel: any) => panel?.status === "approve"
+                  (panel: any) => panel?.status === "approve",
                 ) ? (
                   <CheckCircle className="h-5 w-5" />
                 ) : (
@@ -696,7 +696,7 @@ const ThesisSection = () => {
                             value={selectedFaculty1}
                             onValueChange={setSelectedFaculty1}
                             disabledIds={selectedPanelIds.filter(
-                              (id) => id !== selectedFaculty1?.id
+                              (id) => id !== selectedFaculty1?.id,
                             )}
                           />
 
@@ -706,7 +706,7 @@ const ThesisSection = () => {
                             onValueChange={setSelectedFaculty2} // Ensure it updates correctly
                             options={thesisPanels}
                             disabledIds={selectedPanelIds.filter(
-                              (id) => id !== selectedFaculty2?.id
+                              (id) => id !== selectedFaculty2?.id,
                             )}
                           />
                         </div>
@@ -718,7 +718,7 @@ const ThesisSection = () => {
                             onValueChange={setSelectedFaculty3} // Ensure it updates correctly
                             options={thesisPanels}
                             disabledIds={selectedPanelIds.filter(
-                              (id) => id !== selectedFaculty3?.id
+                              (id) => id !== selectedFaculty3?.id,
                             )}
                           />
 
@@ -728,7 +728,7 @@ const ThesisSection = () => {
                             onValueChange={setSelectedFaculty4} // Ensure it updates correctly
                             options={thesisPanels}
                             disabledIds={selectedPanelIds.filter(
-                              (id) => id !== selectedFaculty4?.id
+                              (id) => id !== selectedFaculty4?.id,
                             )}
                           />
                         </div>
@@ -779,7 +779,7 @@ const ThesisSection = () => {
                               name="file"
                               className="dark:bg-[#1b1b1b]"
                               onChange={(
-                                e: React.ChangeEvent<HTMLInputElement>
+                                e: React.ChangeEvent<HTMLInputElement>,
                               ) =>
                                 setPanelThesisFile(e.target.files?.[0] || null)
                               }
@@ -954,7 +954,7 @@ const ThesisSection = () => {
                 className={`rounded-full p-1 ${
                   userPanelApprovals.length !== 0 &&
                   userPanelApprovals.every(
-                    (panel: any) => panel?.status === "approve"
+                    (panel: any) => panel?.status === "approve",
                   )
                     ? "bg-primary text-white"
                     : "bg-muted text-muted-foreground"
@@ -963,7 +963,7 @@ const ThesisSection = () => {
               >
                 {userPanelApprovals.length !== 0 &&
                 userPanelApprovals.every(
-                  (panel: any) => panel?.status === "approve"
+                  (panel: any) => panel?.status === "approve",
                 ) ? (
                   <CheckCircle className="h-5 w-5" />
                 ) : (
@@ -982,7 +982,7 @@ const ThesisSection = () => {
                       userPanelApprovals.some(
                         (panel: any) =>
                           panel?.status === "pending" ||
-                          panel?.status === "reject"
+                          panel?.status === "reject",
                       )
                     }
                   >
@@ -1033,7 +1033,7 @@ const ThesisSection = () => {
           userPanelApprovals.length == 0 ||
           userPanelApprovals.some(
             (panel: any) =>
-              panel?.status === "pending" || panel?.status === "reject"
+              panel?.status === "pending" || panel?.status === "reject",
           )
             ? "pointer-events-none opacity-50"
             : ""
@@ -1061,7 +1061,7 @@ const ThesisSection = () => {
                       userPanelApprovals.some(
                         (panel: any) =>
                           panel?.status === "pending" ||
-                          panel?.status === "reject"
+                          panel?.status === "reject",
                       )) ||
                     userThesisModel.forScheduleStatus === "pending" ||
                     userThesisModel.forScheduleStatus === "approve"
@@ -1080,7 +1080,7 @@ const ThesisSection = () => {
                       userPanelApprovals.some(
                         (panel: any) =>
                           panel?.status === "pending" ||
-                          panel?.status === "reject"
+                          panel?.status === "reject",
                       )) ||
                     userThesisModel.forScheduleStatus === "pending" ||
                     userThesisModel.forScheduleStatus === "approve"
@@ -1137,7 +1137,7 @@ const ThesisSection = () => {
                   userPanelApprovals.length == 0 &&
                   userPanelApprovals.some(
                     (panel: any) =>
-                      panel?.status === "pending" || panel?.status === "reject"
+                      panel?.status === "pending" || panel?.status === "reject",
                   )
                 }
               >

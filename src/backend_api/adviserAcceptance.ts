@@ -26,7 +26,7 @@ export async function getUserAdviserAcceptanceRequest(id: any) {
 export async function getAdviserAcceptanceRequests(id: any) {
   try {
     const response = await axios(
-      `${baseAPI}/adviserAcceptance/adviserApporvals/${id}`
+      `${baseAPI}/adviserAcceptance/adviserApporvals/${id}`,
     );
     return response.data; // Return the response data
   } catch (error) {
@@ -40,7 +40,7 @@ export async function approvedProposal(id: any, data: any) {
   try {
     const response = await axios.put(
       `${baseAPI}/adviserAcceptance/approveProposal/${id}`,
-      data
+      data,
     );
     return response.data; // Return the response data
   } catch (error) {
@@ -55,7 +55,7 @@ export async function changeAdviserRequest(id: any, adviserId: any) {
   console.log("adviserId", adviserId);
   try {
     const response = await axios.put(
-      `${baseAPI}/adviserAcceptance/changedAdviserRequest/${id}/${adviserId}`
+      `${baseAPI}/adviserAcceptance/changedAdviserRequest/${id}/${adviserId}`,
     );
     return response.data; // Return the created department data
   } catch (error) {
