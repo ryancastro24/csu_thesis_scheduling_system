@@ -72,7 +72,7 @@ const landingPageLoader = () => {
   }
   return null; // Proceed if not authenticated
 };
-
+import ErrorCatcher from "./ErrorResponses/ErrorCatcher";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -86,6 +86,7 @@ const router = createBrowserRouter([
     element: <Dashboard />,
     loader: DashboardLoader,
     action: DashboardAction,
+    errorElement: <ErrorCatcher />, // 👈 HERE
     children: [
       {
         element: <LandingPage />,
@@ -206,5 +207,5 @@ createRoot(document.getElementById("root")!).render(
       <RouterProvider router={router} />
       <Toaster />
     </ThemeProvider>
-  </StrictMode>
+  </StrictMode>,
 );

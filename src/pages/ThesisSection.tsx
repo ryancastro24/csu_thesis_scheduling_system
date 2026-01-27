@@ -262,7 +262,13 @@ const ThesisSection = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const allPanelsApproved = userPanelApprovals.every(
+    (panel: any) => panel?.status === "approve",
+  );
   const adviserApproved = adviserRequest?.status === "approve";
+  // co-adviser is OPTIONAL
+  const coAdviserApprovedOrNotRequired =
+    !coAdviserRequest || coAdviserRequest.status === "approve";
 
   const coAdviserApproved =
     !coAdviserRequest || coAdviserRequest.status === "approve";
@@ -393,7 +399,7 @@ const ThesisSection = () => {
                           />
 
                           <SearchableDropdown
-                            label="Co-Adviser"
+                            label="Co-Adviser (Optional)"
                             options={thesisPanels}
                             value={selectedCoFaculty}
                             onValueChange={setSelectedCofaculty}
@@ -488,7 +494,12 @@ const ThesisSection = () => {
                                 {adviserRequest.adviserId.suffix}
                               </span>
 
-                              <span>Status: {adviserRequest?.status}</span>
+                              <span>
+                                Status:{" "}
+                                {adviserRequest?.status === "approve"
+                                  ? "Approved"
+                                  : "Pending"}
+                              </span>
                               {adviserRequest?.status === "reject" && (
                                 <div className="flex flex-col gap-2">
                                   <span>
@@ -565,7 +576,12 @@ const ThesisSection = () => {
                                 {coAdviserRequest.adviserId.suffix}
                               </span>
 
-                              <span>Status: {coAdviserRequest?.status}</span>
+                              <span>
+                                Status:{" "}
+                                {coAdviserRequest?.status === "approve"
+                                  ? "Approved"
+                                  : "Pending"}
+                              </span>
                               {coAdviserRequest?.status === "reject" && (
                                 <div className="flex flex-col gap-2">
                                   <span>
@@ -627,10 +643,13 @@ const ThesisSection = () => {
             <div className="flex flex-col items-center">
               <div
                 className={`rounded-full p-1 ${
-                  adviserRequest?.status === "approve" ||
-                  coAdviserRequest?.status === "approve"
-                    ? "bg-primary text-white"
-                    : "bg-muted text-muted-foreground"
+                  adviserApproved &&
+                  allPanelsApproved &&
+                  coAdviserApprovedOrNotRequired
+                    ? "bg-green-500 text-white"
+                    : adviserApproved || coAdviserRequest?.status === "approve"
+                      ? "bg-primary text-white"
+                      : "bg-muted text-muted-foreground"
                 }`}
               >
                 {userPanelApprovals.length !== 0 &&
@@ -938,7 +957,7 @@ const ThesisSection = () => {
                       </div>
 
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>Close</AlertDialogCancel>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
@@ -956,7 +975,7 @@ const ThesisSection = () => {
                   userPanelApprovals.every(
                     (panel: any) => panel?.status === "approve",
                   )
-                    ? "bg-primary text-white"
+                    ? "bg-green-500 text-white"
                     : "bg-muted text-muted-foreground"
                 }
                     `}
@@ -1051,13 +1070,14 @@ const ThesisSection = () => {
             <Input type="hidden" name="userId" value={userData.id} />
             <div className="mt-5">
               <div className="flex flex-col gap-3">
-                <Label>Upload Thesis Manuscript</Label>
+                <Label> Upload Thesis Manuscript </Label>
                 <Input
                   name="thesisFile"
-                  className="dark:bg-[#1b1b1b]"
                   type="file"
+                  accept="application/pdf"
+                  className="dark:bg-[#1b1b1b]"
                   disabled={
-                    (userPanelApprovals.length == 0 &&
+                    (userPanelApprovals.length === 0 &&
                       userPanelApprovals.some(
                         (panel: any) =>
                           panel?.status === "pending" ||
@@ -1070,10 +1090,33 @@ const ThesisSection = () => {
               </div>
 
               <div className="flex flex-col gap-3 mt-8">
-                <Label>Upload Thesis Forms</Label>
+                <Label className="flex items-center gap-2">
+                  {" "}
+                  <span> Upload Thesis Forms</span>{" "}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <span className="cursor-pointer text-xs text-orange-500">
+                        <FaCircleInfo />
+                      </span>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>REMINDERS!</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          <h2>Please upload the following forms</h2>
+                          <p>Form 2A and Form 2B</p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Close</AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </Label>
                 <Input
                   name="approvalFile"
                   className="dark:bg-[#1b1b1b]"
+                  accept="application/pdf"
                   type="file"
                   disabled={
                     (userPanelApprovals.length == 0 &&
@@ -1292,6 +1335,7 @@ const ThesisSection = () => {
                 <Label>Upload Thesis Manuscript</Label>
                 <Input
                   name="thesisFile"
+                  accept="application/pdf"
                   className="dark:bg-[#1b1b1b]"
                   type="file"
                   disabled={userThesisModel.defended !== "defended"}
@@ -1299,9 +1343,35 @@ const ThesisSection = () => {
               </div>
 
               <div className="flex flex-col gap-3 mt-8">
-                <Label>Upload Thesis Forms</Label>
+                <Label className="flex items-center gap-2">
+                  {" "}
+                  <span> Upload Thesis Forms</span>{" "}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <span className="cursor-pointer text-xs text-orange-500">
+                        <FaCircleInfo />
+                      </span>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>REMINDERS!</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          <h2>Please upload the following forms</h2>
+                          <p>
+                            Form 2A, Form 2B, Form 2C, Form 2D,Form 2E ,Form 2F,
+                            Form 2G, Form 2H and Form 2I
+                          </p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Close</AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </Label>
                 <Input
                   name="approvalFile"
+                  accept="application/pdf"
                   className="dark:bg-[#1b1b1b]"
                   type="file"
                   disabled={userThesisModel.defended !== "defended"}

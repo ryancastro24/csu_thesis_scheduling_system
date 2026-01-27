@@ -51,8 +51,10 @@ export const action: ActionFunction = async ({ request }) => {
   );
 
   if (data.transaction === "approve" || data.transaction === "reject") {
-    return await approvedProposal(data.id, data);
+    return await approvedProposal(data.id as string, data);
   }
+
+  return null;
 };
 
 /* ---------------- COMPONENT ---------------- */
@@ -64,17 +66,19 @@ const Proposals = () => {
     "all",
   );
 
-  /* -------- FILTER + SORT -------- */
+  /* -------- FILTER + SORT (NEWEST FIRST) -------- */
   const filteredAndSortedData = adviserAcceptanaceData
     .filter((item: any) => {
       if (roleFilter === "all") return true;
-      return item.role === roleFilter; // adviser | coAdviser
+      return item.role === roleFilter;
     })
     .sort((a: any, b: any) => {
-      // pending always first
+      // 1️⃣ Pending always first
       if (a.status === "pending" && b.status !== "pending") return -1;
       if (a.status !== "pending" && b.status === "pending") return 1;
-      return 0;
+
+      // 2️⃣ Newest first
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
   /* -------- STATUS BADGE STYLE -------- */
@@ -128,7 +132,6 @@ const Proposals = () => {
               <div className="flex justify-between items-start">
                 <CardTitle>{val.proposeTitle}</CardTitle>
 
-                {/* STATUS BADGE */}
                 <span
                   className={`text-xs px-2 py-1 rounded ${statusStyle(
                     val.status,

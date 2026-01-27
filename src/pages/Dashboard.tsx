@@ -17,6 +17,7 @@ import { FaCodePullRequest } from "react-icons/fa6";
 import { FaUserFriends } from "react-icons/fa";
 import { FaUserGraduate } from "react-icons/fa";
 import { BsCalendarEventFill } from "react-icons/bs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -69,7 +70,7 @@ import Loader from "@/systemComponents/Loader";
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
   console.log("submitted data:", data);
 
@@ -100,7 +101,7 @@ export const loader = async () => {
   const userThesisDocuments = await getUserThesisDocuments(userData?.id);
   const panelApprovals = await getPanelApprovals(userData.id);
   const adviserAcceptanaceData = await getAdviserAcceptanceRequests(
-    userData.id
+    userData.id,
   );
 
   const requestingUsersData = await getRequestingUsers();
@@ -150,10 +151,6 @@ const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  console.log("User Data:", userData);
-  console.log("User Thesis Documents:", userThesisDocuments);
-  console.log("Notifications:", notifications);
-  console.log("requesting users", requestingUsersData);
   const handleDialogClose = () => {
     setOpenNotification(false);
   };
@@ -163,6 +160,18 @@ const Dashboard = () => {
     localStorage.removeItem("user"); // Remove user data
     navigate("/"); // Redirect to login page
   };
+
+  const sortedNotifications = [...notifications].sort(
+    (a: any, b: any) =>
+      new Date(b.createdAt || 0).getTime() -
+      new Date(a.createdAt || 0).getTime(),
+  );
+
+  const sortedThesisDocs = [...userThesisDocuments].sort(
+    (a: any, b: any) =>
+      new Date(b.createdAt || 0).getTime() -
+      new Date(a.createdAt || 0).getTime(),
+  );
 
   return (
     <div className="w-full font-[Poppins] h-screen grid gap-3 p-3 grid-cols-[210px_1fr] dark:bg-[#121212]">
@@ -236,7 +245,7 @@ const Dashboard = () => {
             )}
 
             {["admin", "chairperson", "faculty"].includes(
-              userData.userType
+              userData.userType,
             ) && (
               <li
                 onClick={() => navigate("/dashboard/calendar")}
@@ -296,7 +305,7 @@ const Dashboard = () => {
                   </span>
                   <span className="flex items-center">Panel Proposals</span>
                   {panelApprovals?.filter(
-                    (approval: any) => approval.status === "pending"
+                    (approval: any) => approval.status === "pending",
                   ).length > 0 && (
                     <Badge
                       variant="destructive"
@@ -304,7 +313,7 @@ const Dashboard = () => {
                     >
                       {
                         panelApprovals.filter(
-                          (approval: any) => approval.status === "pending"
+                          (approval: any) => approval.status === "pending",
                         ).length
                       }
                     </Badge>
@@ -324,7 +333,7 @@ const Dashboard = () => {
                   </span>
                   Advisory Requests
                   {adviserAcceptanaceData?.filter(
-                    (acceptance: any) => acceptance.status === "pending"
+                    (acceptance: any) => acceptance.status === "pending",
                   ).length > 0 && (
                     <Badge
                       variant="destructive"
@@ -332,7 +341,7 @@ const Dashboard = () => {
                     >
                       {
                         adviserAcceptanaceData.filter(
-                          (acceptance: any) => acceptance.status === "pending"
+                          (acceptance: any) => acceptance.status === "pending",
                         ).length
                       }
                     </Badge>
@@ -554,179 +563,152 @@ const Dashboard = () => {
 
           {/* Add Schedule Dialog */}
           <Dialog open={openNotification} onOpenChange={setOpenNotification}>
-            <DialogContent className="max-h-[80vh] overflow-y-auto w-[650px]">
+            <DialogContent className="max-h-[80vh] overflow-y-auto w-[680px]">
               <DialogHeader>
                 <DialogTitle>Notifications</DialogTitle>
               </DialogHeader>
 
-              <div className="flex flex-col gap-3">
-                {(userData.userType === "chairperson" ||
-                  userData.userType === "admin") &&
-                  (notifications.length === 0 ? (
-                    <p>No logs available.</p>
-                  ) : (
-                    notifications.map((val: any) => (
-                      <Card
-                        key={val._id}
-                        className="dark:bg-[#303030] bg-slate-100"
-                      >
-                        <CardHeader>
-                          <CardTitle>{val?.thesisId?.thesisTitle}</CardTitle>
-                          <CardDescription>
-                            Date: {val.thesisId?.schedule?.date} | Time:{" "}
-                            {val.thesisId?.schedule?.time}
-                          </CardDescription>
-                          <CardDescription className="flex items-center justify-between">
-                            <span>{val.userId?.name}</span>
-                            <span
-                              className={`px-3 py-2 text-md rounded font-bold italic  ${
-                                val.status === "approve"
-                                  ? "text-green-500"
-                                  : "text-red-500"
-                              }`}
-                            >
-                              {val.status}
-                            </span>
+              <Tabs defaultValue="panel">
+                <TabsList
+                  className={`grid w-full ${
+                    userData.userType === "chairperson"
+                      ? "grid-cols-2"
+                      : "grid-cols-1"
+                  }`}
+                >
+                  <TabsTrigger value="panel">Panel Actions</TabsTrigger>
 
-                            <Form method="PUT">
-                              <input type="hidden" name="id" value={val._id} />
+                  {userData.userType === "chairperson" && (
+                    <TabsTrigger value="logs">Mark as Read</TabsTrigger>
+                  )}
+                </TabsList>
+
+                {/* =========================
+                    PANEL APPROVALS TAB
+                ========================= */}
+                <TabsContent value="panel">
+                  <div className="flex flex-col gap-3 mt-3">
+                    {sortedThesisDocs.length === 0 ? (
+                      <p>No panel schedules available.</p>
+                    ) : (
+                      sortedThesisDocs.map((val: any) => (
+                        <Card
+                          key={val._id}
+                          className="dark:bg-[#303030] bg-slate-100"
+                        >
+                          <CardHeader>
+                            <CardTitle>{val.thesisTitle}</CardTitle>
+                            <CardDescription>
+                              Date: {val.schedule?.date} | Time:{" "}
+                              {val.schedule?.time}
+                            </CardDescription>
+                            <CardDescription>
+                              Authors:{" "}
+                              {val.students
+                                ?.map(
+                                  (s: any) => `${s.firstname} ${s.lastname}`,
+                                )
+                                .join(", ")}
+                            </CardDescription>
+                          </CardHeader>
+
+                          {(userData.userType === "faculty" ||
+                            userData.userType === "chairperson") && (
+                            <CardFooter className="flex justify-end gap-2">
                               <Button
-                                className="cursor-pointer"
-                                variant={"secondary"}
+                                variant="destructive"
+                                onClick={() => {
+                                  setOpenNotification(false);
+                                  setDialogData({
+                                    open: true,
+                                    action: "Reject",
+                                    thesis: val,
+                                  });
+                                }}
                               >
-                                Mark as read
+                                Reject
                               </Button>
-                            </Form>
-                          </CardDescription>
-                        </CardHeader>
-                      </Card>
-                    ))
-                  ))}
+                              <Button
+                                onClick={() => {
+                                  setOpenNotification(false);
+                                  setDialogData({
+                                    open: true,
+                                    action: "Approve",
+                                    thesis: val,
+                                  });
+                                }}
+                              >
+                                Approve
+                              </Button>
+                            </CardFooter>
+                          )}
+                        </Card>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
 
-                {userData.userType === "faculty" ? (
-                  // faculty view
-                  userThesisDocuments.length === 0 ? (
-                    <p>No panel Schedules available.</p>
-                  ) : (
-                    userThesisDocuments.map((val: any) => (
-                      <Card
-                        key={val._id}
-                        className="dark:bg-[#303030] bg-slate-100"
-                      >
-                        <CardHeader>
-                          <CardTitle>{val.thesisTitle}</CardTitle>
-                          <CardDescription>
-                            Date: {val.schedule?.date} | Time:{" "}
-                            {val.schedule?.time}
-                          </CardDescription>
-                          <CardDescription>
-                            Authors:{" "}
-                            {val.students
-                              ?.map(
-                                (student: any) =>
-                                  `${student.firstname} ${student.lastname}`
-                              )
-                              .join(", ")}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardFooter className="flex justify-end gap-2">
-                          <Button
-                            variant="destructive"
-                            onClick={() => {
-                              setOpenNotification(false);
-                              setDialogData({
-                                open: true,
-                                action: "Reject",
-                                thesis: val,
-                              });
-                            }}
+                {/* =========================
+                    LOGS / MARK AS READ TAB
+                ========================= */}
+                {userData.userType === "chairperson" && (
+                  <TabsContent value="logs">
+                    <div className="flex flex-col gap-3 mt-3">
+                      {sortedNotifications.length === 0 ? (
+                        <p>No logs available.</p>
+                      ) : (
+                        sortedNotifications.map((val: any) => (
+                          <Card
+                            key={val._id}
+                            className="dark:bg-[#303030] bg-slate-100"
                           >
-                            Reject
-                          </Button>
-                          <Button
-                            variant="default"
-                            onClick={() => {
-                              setOpenNotification(false);
-                              setDialogData({
-                                open: true,
-                                action: "Approve",
-                                thesis: val,
-                              });
-                            }}
-                          >
-                            Approve
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))
-                  )
-                ) : userData.userType === "chairperson" ? (
-                  // chairperson view
-                  userThesisDocuments.length === 0 ? (
-                    <p>No panel Schedules available.</p>
-                  ) : (
-                    userThesisDocuments.map((val: any) => (
-                      <Card
-                        key={val._id}
-                        className="dark:bg-[#303030] bg-slate-100"
-                      >
-                        <CardHeader>
-                          <CardTitle>{val.thesisTitle}</CardTitle>
-                          <CardDescription>
-                            Date: {val.schedule?.date} | Time:{" "}
-                            {val.schedule?.time}
-                          </CardDescription>
-                          <CardDescription>
-                            Authors:{" "}
-                            {val.students
-                              ?.map(
-                                (student: any) =>
-                                  `${student.firstname} ${student.lastname}`
-                              )
-                              .join(", ")}
-                          </CardDescription>
-                        </CardHeader>
-                        <CardFooter className="flex justify-end gap-2">
-                          <Button
-                            variant="destructive"
-                            onClick={() => {
-                              setOpenNotification(false);
-                              setDialogData({
-                                open: true,
-                                action: "Reject",
-                                thesis: val,
-                              });
-                            }}
-                          >
-                            Reject
-                          </Button>
-                          <Button
-                            variant="default"
-                            onClick={() => {
-                              setOpenNotification(false);
-                              setDialogData({
-                                open: true,
-                                action: "Approve",
-                                thesis: val,
-                              });
-                            }}
-                          >
-                            Approve
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))
-                  )
-                ) : null}
-              </div>
+                            <CardHeader>
+                              <CardTitle>
+                                {val?.thesisId?.thesisTitle}
+                              </CardTitle>
+                              <CardDescription>
+                                Date: {val.thesisId?.schedule?.date} | Time:{" "}
+                                {val.thesisId?.schedule?.time}
+                              </CardDescription>
+
+                              <CardDescription className="flex items-center justify-between">
+                                <span>{val.userId?.name}</span>
+
+                                <span
+                                  className={`font-bold italic ${
+                                    val.status === "approve"
+                                      ? "text-green-500"
+                                      : "text-red-500"
+                                  }`}
+                                >
+                                  {val.status === "approve"
+                                    ? "Approved"
+                                    : "Rejected"}
+                                </span>
+
+                                <Form method="PUT">
+                                  <input
+                                    type="hidden"
+                                    name="id"
+                                    value={val._id}
+                                  />
+                                  <Button variant="secondary">
+                                    Mark as read
+                                  </Button>
+                                </Form>
+                              </CardDescription>
+                            </CardHeader>
+                          </Card>
+                        ))
+                      )}
+                    </div>
+                  </TabsContent>
+                )}
+              </Tabs>
 
               <DialogFooter>
-                <Button
-                  className="cursor-pointer"
-                  variant="ghost"
-                  onClick={handleDialogClose}
-                >
-                  Cancel
+                <Button variant="ghost" onClick={handleDialogClose}>
+                  Close
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -738,14 +720,19 @@ const Dashboard = () => {
           >
             <DialogContent className="w-[500px]">
               <DialogHeader>
-                <DialogTitle>{dialogData.action}</DialogTitle>
+                <DialogTitle>
+                  Are you sure you want to {dialogData.action}?{" "}
+                </DialogTitle>
               </DialogHeader>
-              <textarea
-                onChange={(e) => setRemarks(e.target.value)}
-                value={remarks}
-                placeholder="Please provide a reason..."
-                className="w-full h-24 p-2 border rounded"
-              />
+
+              {dialogData.action === "Reject" && (
+                <textarea
+                  onChange={(e) => setRemarks(e.target.value)}
+                  value={remarks}
+                  placeholder="Please provide a reason..."
+                  className="w-full h-24 p-2 border rounded"
+                />
+              )}
               <DialogFooter>
                 <Button
                   className="cursor-pointer"
@@ -759,6 +746,7 @@ const Dashboard = () => {
                   <input type="hidden" name="panelId" value={userData.id} />
 
                   <input type="hidden" name="remarks" value={remarks} />
+
                   <input
                     type="hidden"
                     name="status"

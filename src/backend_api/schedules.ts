@@ -4,7 +4,7 @@ export async function generateSchedule(data: any) {
   try {
     const response = await axios.post(
       `${baseAPI}/schedules/generateThesisSchedule/data`,
-      data
+      data,
     );
     return response.data; // Return the created department data
   } catch (error) {
@@ -16,11 +16,22 @@ export async function generateSchedule(data: any) {
 export async function getUserSchedules(id: string) {
   try {
     const response = await axios.get(`${baseAPI}/schedules/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching schedules:", error);
 
-    return response.data; // Return the retrieved data
-  } catch (error) {
-    console.error("Error fetching colleges:", error);
-    throw error; // Rethrow the error for handling
+    throw new Response(
+      JSON.stringify({
+        message:
+          error.response?.data?.message || "Failed to fetch user schedules",
+      }),
+      {
+        status: error.response?.status || 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
   }
 }
 
@@ -37,7 +48,7 @@ export async function deleteUserSchedule(id: string) {
 export async function getUserThesisDocuments(id: string) {
   try {
     const response = await axios.get(
-      `${baseAPI}/thesisDocuments/specificThesisModel/data/${id}`
+      `${baseAPI}/thesisDocuments/specificThesisModel/data/${id}`,
     );
     console.log("response.data:", response.data);
     return response.data; // Return the retrieved data

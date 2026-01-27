@@ -4,6 +4,8 @@ import { useLocation } from "react-router-dom";
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { TbArrowBack } from "react-icons/tb";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,7 @@ export async function loader() {
 
 const PDFViewer = () => {
   const defaultLayoutPluginInstance = defaultLayoutPlugin();
+  const navigate = useNavigate();
   const location = useLocation();
   const { thesisFile, title, student1, student2, student3 } =
     location.state || {};
@@ -34,6 +37,13 @@ const PDFViewer = () => {
   return (
     <div className="h-[750px] overflow-auto bg-background p-4 rounded shadow">
       <div className="flex items-center justify-between mb-2">
+        <Button
+          className="cursor-pointer "
+          size={"icon"}
+          onClick={() => navigate(-1)}
+        >
+          <TbArrowBack size={20} />
+        </Button>
         <h1 className="dark:text-white light:text-black"> {title}</h1>
         <Dialog>
           <DialogTrigger>

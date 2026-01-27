@@ -205,7 +205,7 @@ const PanelApprovals = () => {
                       value={"approve"}
                       className="bg-green-500 cursor-pointer hover:bg-green-600"
                     >
-                      Approved
+                      Approve
                     </Button>
                   </Form>
                 </div>

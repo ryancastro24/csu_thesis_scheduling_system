@@ -5,6 +5,7 @@ import interactionPlugin from "@fullcalendar/interaction";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+
 import {
   Form,
   useLoaderData,
@@ -64,7 +65,7 @@ const convertTo24HourFormat = (time: string) => {
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
 
   if (request.method === "POST") {
@@ -97,7 +98,6 @@ const getStartDateTime = (date: string, timeRange: string) => {
 export default function Calendar() {
   const { userData, schedules } = useLoaderData();
 
-  console.log(schedules);
   const navigation = useNavigation();
 
   const [openModal, setOpenModal] = useState(false);

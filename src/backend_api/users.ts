@@ -109,7 +109,7 @@ export async function updateUserProfile(id: any, data: FormData) {
     const response = await axios.put(
       `${baseAPI}/users/updateUserProfile/${id}`,
       data,
-      {}
+      {},
     );
     console.log("update profile response", response.data);
     return response.data;
@@ -122,7 +122,7 @@ export async function updateUserProfile(id: any, data: FormData) {
 export async function getUserProfile(id: any) {
   try {
     const response = await axios.get(
-      `${baseAPI}/users/getUserProfile/data/${id}`
+      `${baseAPI}/users/getUserProfile/data/${id}`,
     );
     return response.data;
   } catch (error) {
