@@ -547,7 +547,7 @@ const ThesisSection = () => {
                             </Button>
                           )}
 
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogCancel>Close</AlertDialogCancel>
                         </AlertDialogFooter>
                       </Form>
                     </AlertDialogContent>
@@ -742,7 +742,7 @@ const ThesisSection = () => {
                           />
 
                           <SearchableDropdown
-                            label="Oral Secretary"
+                            label="Secretary"
                             value={selectedFaculty4} // Pass the entire object
                             onValueChange={setSelectedFaculty4} // Ensure it updates correctly
                             options={thesisPanels}
@@ -796,6 +796,7 @@ const ThesisSection = () => {
                             <Input
                               type="file"
                               name="file"
+                              accept="application/pdf"
                               className="dark:bg-[#1b1b1b]"
                               onChange={(
                                 e: React.ChangeEvent<HTMLInputElement>,
@@ -1300,7 +1301,7 @@ const ThesisSection = () => {
                   </div>
 
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>Close</AlertDialogCancel>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -1547,7 +1548,7 @@ const ThesisSection = () => {
                       </div>
 
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>Close</AlertDialogCancel>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>

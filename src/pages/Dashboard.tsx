@@ -579,7 +579,9 @@ const Dashboard = () => {
                   <TabsTrigger value="panel">Panel Actions</TabsTrigger>
 
                   {userData.userType === "chairperson" && (
-                    <TabsTrigger value="logs">Mark as Read</TabsTrigger>
+                    <TabsTrigger value="logs">
+                      Panel schedule status
+                    </TabsTrigger>
                   )}
                 </TabsList>
 
