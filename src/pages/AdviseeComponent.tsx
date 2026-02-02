@@ -37,7 +37,7 @@ export const loader = async () => {
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
 
   console.log("submitted data:", data);
@@ -60,7 +60,7 @@ const AdviseeComponent = () => {
 
   // 🔥 Holds select value per thesis
   const [selectedStatus, setSelectedStatus] = useState<Record<string, string>>(
-    {}
+    {},
   );
 
   /* =======================
@@ -88,7 +88,7 @@ const AdviseeComponent = () => {
         return "bg-yellow-400 dark:bg-yellow-600";
       case "major revision":
         return "bg-orange-500 dark:bg-orange-700";
-      case "re-defense":
+      case "redefense":
         return "bg-red-500 dark:bg-red-700";
       default:
         return "bg-gray-400 dark:bg-gray-600";
@@ -152,13 +152,13 @@ const AdviseeComponent = () => {
                   {thesis?.schedule?.date || "No schedule yet"}
                 </CardDescription>
 
-                {thesis.defended && (
+                {thesis.thesisFinalStatus && (
                   <span
                     className={`inline-block mt-2 px-3 py-1 text-sm rounded text-white ${statusColor(
-                      thesis.defended
+                      thesis.thesisFinalStatus,
                     )}`}
                   >
-                    {thesis.defended.toUpperCase()}
+                    {thesis.thesisFinalStatus.toUpperCase()}
                   </span>
                 )}
               </CardHeader>
@@ -193,7 +193,7 @@ const AdviseeComponent = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="defended">Defended</SelectItem>
-                        <SelectItem value="re-defense">Re-defense</SelectItem>
+                        <SelectItem value="redefense">Re-defense</SelectItem>
                         <SelectItem value="minor revision">
                           Minor Revision
                         </SelectItem>

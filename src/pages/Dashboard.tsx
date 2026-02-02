@@ -604,6 +604,7 @@ const Dashboard = () => {
                               Date: {val.schedule?.date} | Time:{" "}
                               {val.schedule?.time}
                             </CardDescription>
+
                             <CardDescription>
                               Authors:{" "}
                               {val.students
@@ -612,6 +613,8 @@ const Dashboard = () => {
                                 )
                                 .join(", ")}
                             </CardDescription>
+
+                            <CardDescription>Type: {val.type}</CardDescription>
                           </CardHeader>
 
                           {(userData.userType === "faculty" ||

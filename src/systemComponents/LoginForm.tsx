@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 const baseAPI = import.meta.env.VITE_BACKEND_API_ENDPOINT;
 import bg from "@/assets/bg.png";
-import csulogo from "@/assets/3dlogo.png";
+import ccis_logo from "@/assets/ccis_logo.png";
 console.log(baseAPI);
 import {
   Card,
@@ -307,32 +307,35 @@ export function LoginForm({}: React.ComponentPropsWithoutRef<"div">) {
       <img
         src={bg}
         alt="background image"
-        className="absolute inset-0 w-full z-[-1]"
+        className="absolute  w-full z-[-1]"
       />
 
-      <div className="grid grid-cols-2 w-full">
-        <div className="w-full  h-screen flex items-center justify-center flex-col gap-2">
-          <img src={csulogo} alt="csu logo" className="w-[280px]" />
-          <h1 className="text-3xl font-bold text-center font-[Poppins]">
-            CARAGA STATE UNIVERSITY
-          </h1>
-          <h2 className="text-2xl  text-center italic">
-            Thesis Scheduling System
-          </h2>
-        </div>
+      {/* <div className="absolute inset-0 bg-[#2e2e2eaf]" /> */}
 
-        <div className="w-full flex items-center justify-center">
+      <div
+        className="h-[90vh] w-[1000px] rounded-xl z-50 bg-white/70 
+                backdrop-blur-xl
+                border border-white/30"
+      >
+        <div className="w-full flex items-center h-full justify-between gap-5">
+          <div className="er py-4 z-50 h-full">
+            <img src={ccis_logo} alt="ccis logo" className="w-150" />
+          </div>
           <Card
-            className=" bg-white/20
-  backdrop-blur-md
-  border border-white/30
-  shadow-lg
-  rounded-2xl"
+            className=" 
+                h-full
+                bg-white
+                text-black
+                font-[Poppins]
+                border-0
+                "
           >
             <CardHeader>
-              <CardTitle>Welcome Back!</CardTitle>
+              <CardTitle className="text-2xl">
+                CCIS Thesis Scheduling System
+              </CardTitle>
               <CardDescription className="text-base-300 text-sm">
-                Enter your Username below to login to your account
+                Manage Your Thesis Defense, Advisers, and Panels Efficiently
               </CardDescription>
             </CardHeader>
             <CardContent>

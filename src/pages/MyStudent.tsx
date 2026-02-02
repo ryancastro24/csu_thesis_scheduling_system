@@ -40,7 +40,7 @@ export const loader = async () => {
   const userData: any = JSON.parse(user as any);
 
   const approvedThesisDocuments = await getUserApprovedThesisDocuments(
-    userData.id
+    userData.id,
   );
 
   return { userData, approvedThesisDocuments };
@@ -52,7 +52,7 @@ export const loader = async () => {
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
 
   const { thesisId, panelId, status, remarks } = data;
@@ -85,14 +85,14 @@ const MyStudent: React.FC = () => {
     selectedType === "all"
       ? approvedThesisDocuments
       : approvedThesisDocuments.filter(
-          (item: any) => item.type === selectedType
+          (item: any) => item.type === selectedType,
         );
 
   const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE);
 
   const paginatedData = filteredData.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   return (
@@ -168,8 +168,8 @@ const MyStudent: React.FC = () => {
                       val.status === "approved"
                         ? "bg-green-400 dark:bg-green-700"
                         : val.status === "pending"
-                        ? "bg-orange-400 dark:bg-orange-700"
-                        : "bg-red-500 dark:bg-red-700"
+                          ? "bg-orange-400 dark:bg-orange-700"
+                          : "bg-red-500 dark:bg-red-700"
                     }`}
                   >
                     {val.schedule?.date

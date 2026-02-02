@@ -43,7 +43,6 @@ import { FaXmark } from "react-icons/fa6";
 import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaCircleMinus, FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
 import { FaCalendarDays } from "react-icons/fa6";
-import { MdMarkEmailRead } from "react-icons/md";
 
 type Venues = {
   label: string;
@@ -67,7 +66,7 @@ import {
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
 
   console.log(data);
@@ -86,13 +85,15 @@ export const action: ActionFunction = async ({ request }) => {
 
   if (data?.submit === "reschedule") {
     const rescheduleThesisData = await rescheduleThesis(data.id, data);
+
+    console.log("reschedule data for testing", rescheduleThesisData);
     return rescheduleThesisData;
   }
 
   if (data?.submit === "forScheduleStatusReject") {
     const updateThesisScheduleApprovalData = await updateThesisScheduleApproval(
       data.thesisId,
-      data
+      data,
     );
 
     return updateThesisScheduleApprovalData;
@@ -101,7 +102,7 @@ export const action: ActionFunction = async ({ request }) => {
   if (data?.submit === "forScheduleStatusApprove") {
     const updateThesisScheduleApprovalData = await updateThesisScheduleApproval(
       data.thesisId,
-      data
+      data,
     );
 
     return updateThesisScheduleApprovalData;
@@ -119,10 +120,15 @@ export async function loader() {
   return { students, faculty, chairpersons, thesisSchedules, userData };
 }
 
+type ScheduleTab = "for-approval" | "reschedule" | "archives";
+
 const ITEMS_PER_PAGE = 6;
 const Schedules = () => {
   const { thesisSchedules, userData } = useLoaderData();
 
+  console.log("thesis schedules", thesisSchedules);
+
+  const [activeTab, setActiveTab] = useState<ScheduleTab>("for-approval");
   const [generateDateRescheduleLoading, setGenerateDateRescheduleLoading] =
     useState(false);
   const [isGeneratedDateDialogOpen, setIsGeneratedDateDialogOpen] =
@@ -191,7 +197,7 @@ const Schedules = () => {
     try {
       const response = await axios.post(
         `${baseAPI}/schedules/generateThesisSchedule/data`,
-        data
+        data,
       );
 
       const scheduleData = response.data?.data || [];
@@ -227,7 +233,7 @@ const Schedules = () => {
     try {
       const response = await axios.post(
         `${baseAPI}/schedules/verifyGenerateDateTime/data`,
-        data
+        data,
       );
 
       setVerifiedDateMessage(response.data?.message);
@@ -253,30 +259,48 @@ const Schedules = () => {
     dateRange.from && dateRange.to
       ? `${format(dateRange.from, "yyyy-MM-dd")} - ${format(
           dateRange.to,
-          "yyyy-M-d"
+          "yyyy-M-d",
         )}`
       : "Select date range";
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
-  console.log(formattedDateRange);
-  console.log(startTime);
-  console.log(endTime);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filter schedules based on search query
   const filteredSchedules = thesisSchedules.filter((val: any) =>
-    val.thesisTitle.toLowerCase().includes(searchQuery.toLowerCase())
+    val.thesisTitle.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const tabFilteredSchedules = filteredSchedules.filter((val: any) => {
+    // RESCHEDULE has highest priority
+
+    if (activeTab === "for-approval") {
+      return (
+        val.forScheduleStatus === "idle" || val.forScheduleStatus === "pending"
+      );
+    }
+
+    if (activeTab === "reschedule") {
+      return val.reschedule === true;
+    }
+
+    if (activeTab === "archives") {
+      return val.forScheduleStatus === "approve" && val.reschedule !== true;
+    }
+
+    return true;
+  });
+
   // Pagination logic
-  const totalPages = Math.ceil(filteredSchedules.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(tabFilteredSchedules.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
-  const paginatedSchedules = filteredSchedules.slice(
+  const paginatedSchedules = tabFilteredSchedules.slice(
     startIndex,
-    startIndex + ITEMS_PER_PAGE
+    startIndex + ITEMS_PER_PAGE,
   );
 
   const handleNextPage = () => {
@@ -294,10 +318,24 @@ const Schedules = () => {
     }
   }, [verifiedDateMessage]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
+  const forApprovalCount = filteredSchedules.filter(
+    (val: any) => val.forScheduleStatus !== "approve",
+  ).length;
+
+  const rescheduleCount = filteredSchedules.filter(
+    (val: any) =>
+      val.reschedule === true ||
+      (val.defended == "re-defense" && val.schedule === null),
+  ).length;
+
   return (
     <div className="w-full h-full p-4">
       {/* Header with Search Input and Add Schedule Button */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex gap-5 items-center  mb-4">
         <div className="relative w-64">
           <Search
             className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"
@@ -310,6 +348,41 @@ const Schedules = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10"
           />
+        </div>
+
+        <div className="flex items-center gap-3">
+          {[
+            { label: "For Approval", value: "for-approval" },
+            { label: "Reschedule", value: "reschedule" },
+            { label: "Archives", value: "archives" },
+          ].map((tab) => {
+            const badgeCount =
+              tab.value === "for-approval"
+                ? forApprovalCount
+                : tab.value === "reschedule"
+                  ? rescheduleCount
+                  : 0;
+
+            return (
+              <Button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value as ScheduleTab)}
+                className={`relative rounded-lg px-6 ${
+                  activeTab === tab.value
+                    ? "bg-orange-500 text-white"
+                    : "bg-black text-white hover:bg-neutral-800"
+                }`}
+              >
+                {tab.label}
+
+                {badgeCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full">
+                    {badgeCount}
+                  </span>
+                )}
+              </Button>
+            );
+          })}
         </div>
       </div>
 
@@ -350,8 +423,8 @@ const Schedules = () => {
                       {val?.status === "pending"
                         ? "Pending"
                         : val?.status === "approved"
-                        ? "Approved"
-                        : "For Reschedule"}{" "}
+                          ? "Approved"
+                          : "For Reschedule"}{" "}
                     </DialogDescription>
                   </DialogHeader>
                   <div>
@@ -380,7 +453,7 @@ const Schedules = () => {
                                     {index + 1}. {fullName}
                                   </li>
                                 );
-                              }
+                              },
                             )}
                           </ol>
                         </div>
@@ -508,12 +581,18 @@ const Schedules = () => {
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button
+                      disabled={
+                        "schedule" in val &&
+                        val.schedule !== null &&
+                        val.reschedule !== true &&
+                        (val.status === "approved" || val.status === "pending")
+                      }
                       onClick={() => {
                         setOpenThesisModal(true);
                         setSelectedThesis(val);
                       }}
                       className={`cursor-pointer ${
-                        val.reschedule ? "bg-red-500" : ""
+                        val.reschedule ? "bg-red-500 hover:bg-red-700" : ""
                       }`}
                       size={"icon"}
                     >
@@ -637,9 +716,9 @@ const Schedules = () => {
                                     "Schedule conflict detected"
                                       ? "bg-red-500"
                                       : verifiedDateMessage ===
-                                        "No conflicts detected"
-                                      ? "bg-green-500"
-                                      : ""
+                                          "No conflicts detected"
+                                        ? "bg-green-500"
+                                        : ""
                                   } text-white p-4 rounded`}
                                   style={{
                                     display: verifiedDateMessage
@@ -651,9 +730,9 @@ const Schedules = () => {
                                   "Schedule conflict detected"
                                     ? "There is a conflict with the selected date and time."
                                     : verifiedDateMessage ===
-                                      "No conflicts detected"
-                                    ? "The selected date and time are available."
-                                    : ""}
+                                        "No conflicts detected"
+                                      ? "The selected date and time are available."
+                                      : ""}
                                 </div>
 
                                 <DialogTitle>
@@ -697,7 +776,7 @@ const Schedules = () => {
                                                 onClick={() =>
                                                   handleSetRescheduleDateTime(
                                                     scheduleItem.date,
-                                                    scheduleItem.time
+                                                    scheduleItem.time,
                                                   )
                                                 }
                                                 variant="secondary"
@@ -710,7 +789,7 @@ const Schedules = () => {
                                                 onClick={() =>
                                                   handleVerifyDateTime(
                                                     scheduleItem.date,
-                                                    scheduleItem.time
+                                                    scheduleItem.time,
                                                   )
                                                 }
                                               >
@@ -831,24 +910,40 @@ const Schedules = () => {
               <p className="text-sm flex items-center gap-2">
                 {val?.status === "pending" ? (
                   <FaCircleMinus />
-                ) : val?.status === "approved" ? (
+                ) : val?.status === "approved" &&
+                  (val?.defended === "defended" ||
+                    val?.defended === "minor revision" ||
+                    val?.defended === "major revision" ||
+                    val?.defended === "pending") ? (
                   <FaCircleCheck />
                 ) : (
                   <FaCircleXmark />
                 )}
                 {val?.status === "pending"
                   ? "Pending"
-                  : val?.status === "approved"
-                  ? "Approved"
-                  : "For Reschedule"}
+                  : val?.status === "approved" &&
+                      (val?.defended === "defended" ||
+                        val?.defended === "minor revision" ||
+                        val?.defended === "major revision" ||
+                        val?.defended === "pending")
+                    ? "Approved"
+                    : "For Reschedule" +
+                      (val?.defended === "re-defense" ? " (Re-defense)" : "")}
               </p>
 
-              {val?.status === "approved" && (
-                <Button className="flex items-center gap-2">
-                  <MdMarkEmailRead />
-                  Send Email
-                </Button>
-              )}
+              {val?.status === "approved" &&
+                (val.defended === "defended" ||
+                  val.defended === "minor revision" ||
+                  val.defended === "major revision") && (
+                  <span className="text-sm text-green-500 flex items-center gap-2">
+                    {" "}
+                    {val?.defended === "defended"
+                      ? "Defended"
+                      : val?.defended === "minor revision"
+                        ? "Minor Revision"
+                        : "Major Revision"}
+                  </span>
+                )}
             </CardFooter>
           </Card>
         ))}

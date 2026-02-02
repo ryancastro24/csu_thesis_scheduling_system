@@ -867,7 +867,9 @@ const ThesisSection = () => {
                               }`}
                             >
                               <CardHeader>
-                                <CardTitle>{val.panelId.lastname}</CardTitle>
+                                <CardTitle>
+                                  {val.panelId.firstname} {val.panelId.lastname}
+                                </CardTitle>
                                 <CardDescription>
                                   {val?.remarks || "No idicated remarks"}
                                 </CardDescription>
@@ -1139,38 +1141,54 @@ const ThesisSection = () => {
                 Defended
               </Button> */}
 
-            {userThesisModel.defended === "defended" ? (
+            {userThesisModel.defended ? (
               <div className="flex flex-col gap-4">
-                <Button variant={"secondary"} disabled>
-                  Thesis Succesfully Defended
-                </Button>
+                <span
+                  className={` rounded p-2 font-[Poppins] text-sm ${
+                    userThesisModel.thesisFinalStatus === "defended"
+                      ? "bg-green-500 text-white"
+                      : userThesisModel.thesisFinalStatus === "minor revision"
+                        ? "bg-yellow-500 text-black"
+                        : userThesisModel.thesisFinalStatus === "major revision"
+                          ? "bg-orange-500 text-white"
+                          : ""
+                  }}`}
+                >
+                  {userThesisModel.thesisFinalStatus === "defended"
+                    ? "Thesis Successfully Defended"
+                    : userThesisModel.thesisFinalStatus === "minor revision"
+                      ? "Defended with Minor Revision"
+                      : userThesisModel.thesisFinalStatus === "major revision"
+                        ? "Defended with Major Revision"
+                        : ""}
+                </span>
               </div>
             ) : userThesisModel.forScheduleStatus === "pending" ? (
-              <Button variant={"secondary"} disabled>
+              <span className="rounded p-2   font-[Poppins] text-sm">
                 Request is pending
-              </Button>
+              </span>
             ) : userThesisModel.forScheduleStatus === "approve" ? (
               <div className="flex flex-col gap-4">
                 <p className="text-sm opacity-40">
                   Request is approved, schedule for defense will be posted here
                 </p>
 
-                {(userThesisModel.panelApprovals[0]?.status === "approve" ||
-                  userThesisModel.panelApprovals[1]?.status === "approve" ||
-                  userThesisModel.panelApprovals[2]?.status === "approve" ||
-                  userThesisModel.panelApprovals[3]?.status === "approve") && (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-sm">
-                      Date: {userThesisModel.schedule.date}
-                    </p>
-                    <p className="text-sm">
-                      Time: {userThesisModel.schedule.time}
-                    </p>
-                    <p className="text-sm">
-                      Venue: {userThesisModel.venue || "Not set"}
-                    </p>
-                  </div>
-                )}
+                {userThesisModel.panelApprovals[0]?.status === "approve" &&
+                  userThesisModel.panelApprovals[1]?.status === "approve" &&
+                  userThesisModel.panelApprovals[2]?.status === "approve" &&
+                  userThesisModel.panelApprovals[3]?.status === "approve" && (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm">
+                        Date: {userThesisModel.schedule.date}
+                      </p>
+                      <p className="text-sm">
+                        Time: {userThesisModel.schedule.time}
+                      </p>
+                      <p className="text-sm">
+                        Venue: {userThesisModel.venue || "Not set"}
+                      </p>
+                    </div>
+                  )}
               </div>
             ) : (
               <Button
@@ -1191,7 +1209,7 @@ const ThesisSection = () => {
               </Button>
             )}
 
-            {userThesisModel.defended !== "defended" && (
+            {!userThesisModel.defended && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button size={"icon"} variant={"outline"}>
@@ -1310,11 +1328,14 @@ const ThesisSection = () => {
         </Form>
       </Card>
 
+      {/*  */}
+      {/*  */}
+
+      {/* final defense section */}
+
       <Card
         className={`dark:bg-[#303030] ${
-          userThesisModel.defended !== "defended"
-            ? "pointer-events-none opacity-50"
-            : ""
+          !userThesisModel.defended ? "pointer-events-none opacity-50" : ""
         }`}
       >
         <CardHeader>
@@ -1339,7 +1360,7 @@ const ThesisSection = () => {
                   accept="application/pdf"
                   className="dark:bg-[#1b1b1b]"
                   type="file"
-                  disabled={userThesisModel.defended !== "defended"}
+                  disabled={userThesisModel.forScheduleStatus !== "idle"}
                 />
               </div>
 
@@ -1375,7 +1396,7 @@ const ThesisSection = () => {
                   accept="application/pdf"
                   className="dark:bg-[#1b1b1b]"
                   type="file"
-                  disabled={userThesisModel.defended !== "defended"}
+                  disabled={userThesisModel.forScheduleStatus !== "idle"}
                 />
               </div>
             </div>
@@ -1386,11 +1407,31 @@ const ThesisSection = () => {
                 Defended
               </Button> */}
 
-            {userFinalThesisModel.defended === "defended" ? (
+            {userFinalThesisModel.defended ? (
               <div className="flex flex-col gap-4">
-                <Button variant={"secondary"} disabled>
-                  Thesis Succesfully Defended
-                </Button>
+                <span
+                  className={` rounded p-2 font-[Poppins] text-sm ${
+                    userFinalThesisModel.thesisFinalStatus === "defended"
+                      ? "bg-green-500 text-white"
+                      : userFinalThesisModel.thesisFinalStatus ===
+                          "minor revision"
+                        ? "bg-yellow-500 text-black"
+                        : userFinalThesisModel.thesisFinalStatus ===
+                            "major revision"
+                          ? "bg-orange-500 text-white"
+                          : ""
+                  }}`}
+                >
+                  {userFinalThesisModel.thesisFinalStatus === "defended"
+                    ? "Thesis Successfully Defended"
+                    : userFinalThesisModel.thesisFinalStatus ===
+                        "minor revision"
+                      ? "Defended with Minor Revision"
+                      : userFinalThesisModel.thesisFinalStatus ===
+                          "major revision"
+                        ? "Defended with Major Revision"
+                        : ""}
+                </span>
               </div>
             ) : userFinalThesisModel.forScheduleStatus === "pending" ? (
               <Button variant={"secondary"} disabled>
@@ -1402,26 +1443,25 @@ const ThesisSection = () => {
                   Request is approved, schedule for defense will be posted here
                 </p>
 
-                {(userFinalThesisModel.panelApprovals[0]?.status ===
-                  "approve" ||
+                {userFinalThesisModel.panelApprovals[0]?.status === "approve" &&
                   userFinalThesisModel.panelApprovals[1]?.status ===
-                    "approve" ||
+                    "approve" &&
                   userFinalThesisModel.panelApprovals[2]?.status ===
-                    "approve" ||
+                    "approve" &&
                   userFinalThesisModel.panelApprovals[3]?.status ===
-                    "approve") && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <p className="text-sm">
-                      Date: {userFinalThesisModel.schedule.date}
-                    </p>
-                    <p className="text-sm">
-                      Time: {userFinalThesisModel.schedule.date}
-                    </p>
-                    <p className="text-sm">
-                      Venue: {userFinalThesisModel.venue || "Not set"}
-                    </p>
-                  </div>
-                )}
+                    "approve" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <p className="text-sm">
+                        Date: {userFinalThesisModel.schedule.date}
+                      </p>
+                      <p className="text-sm">
+                        Time: {userFinalThesisModel.schedule.time}
+                      </p>
+                      <p className="text-sm">
+                        Venue: {userFinalThesisModel.venue || "Not set"}
+                      </p>
+                    </div>
+                  )}
               </div>
             ) : (
               <div className="flex items-center justify-between w-full">
@@ -1463,7 +1503,8 @@ const ThesisSection = () => {
                             >
                               <CardHeader>
                                 <CardTitle>
-                                  {val.panelId.firstname} {val.panelId.lastname}
+                                  {val.panelId.firstname}
+                                  {val.panelId.lastname}
                                 </CardTitle>
 
                                 <CardDescription className="flex items-center gap-2">
