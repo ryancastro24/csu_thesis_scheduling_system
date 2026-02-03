@@ -76,7 +76,7 @@ export async function loader() {
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
 
   if (request.method === "POST") {
@@ -137,7 +137,7 @@ export default function UsersPage() {
   const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
   const currentUsers = filteredUsers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   const handlePageChange = (newPage: number) => {
@@ -232,7 +232,7 @@ export default function UsersPage() {
               variant={selectedUsertype === "student" ? "default" : "secondary"}
               onClick={() =>
                 setSelectedUsertype((prev) =>
-                  prev === "student" ? "" : "student"
+                  prev === "student" ? "" : "student",
                 )
               }
             >
@@ -242,7 +242,7 @@ export default function UsersPage() {
               variant={selectedUsertype === "faculty" ? "default" : "secondary"}
               onClick={() =>
                 setSelectedUsertype((prev) =>
-                  prev === "faculty" ? "" : "faculty"
+                  prev === "faculty" ? "" : "faculty",
                 )
               }
             >
@@ -254,7 +254,7 @@ export default function UsersPage() {
               }
               onClick={() =>
                 setSelectedUsertype((prev) =>
-                  prev === "chairperson" ? "" : "chairperson"
+                  prev === "chairperson" ? "" : "chairperson",
                 )
               }
             >
@@ -293,7 +293,10 @@ export default function UsersPage() {
                   </Avatar>
                   <div className="flex items-center gap-2 whitespace-nowrap">
                     <span>{val.firstname}</span>
-                    <span>{val.middlename?.[0] ?? ""}.</span>
+                    <span>
+                      {val.middlename?.[0] ?? ""}{" "}
+                      {val.middlename?.[0] ? "." : ""}
+                    </span>
                     <span>{val.lastname}</span>
                     <span>{val.suffix}</span>
                   </div>

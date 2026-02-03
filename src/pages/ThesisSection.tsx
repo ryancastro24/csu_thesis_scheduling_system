@@ -168,6 +168,7 @@ const ThesisSection = () => {
   } = useLoaderData();
   const navigation = useNavigation();
 
+  console.log("userThesisModel", userThesisModel);
   const thesisPanels = [...faculty, ...chairpersons];
   const [proposalTitle, setProposalTitle] = useState<string>("");
   const [adviserThesisFile, setAdviserThesisFile] = useState<File | null>(null);
@@ -714,9 +715,13 @@ const ThesisSection = () => {
                             options={thesisPanels}
                             value={selectedFaculty1}
                             onValueChange={setSelectedFaculty1}
-                            disabledIds={selectedPanelIds.filter(
-                              (id) => id !== selectedFaculty1?.id,
-                            )}
+                            disabledIds={[
+                              userThesisModel?.adviser,
+                              userThesisModel?.coAdviser,
+                              ...selectedPanelIds.filter(
+                                (id) => id !== selectedFaculty1?.id,
+                              ),
+                            ]}
                           />
 
                           <SearchableDropdown
@@ -724,9 +729,13 @@ const ThesisSection = () => {
                             value={selectedFaculty2} // Pass the entire object
                             onValueChange={setSelectedFaculty2} // Ensure it updates correctly
                             options={thesisPanels}
-                            disabledIds={selectedPanelIds.filter(
-                              (id) => id !== selectedFaculty2?.id,
-                            )}
+                            disabledIds={[
+                              userThesisModel?.adviser,
+                              userThesisModel?.coAdviser,
+                              ...selectedPanelIds.filter(
+                                (id) => id !== selectedFaculty2?.id,
+                              ),
+                            ]}
                           />
                         </div>
 
@@ -736,9 +745,13 @@ const ThesisSection = () => {
                             value={selectedFaculty3} // Pass the entire object
                             onValueChange={setSelectedFaculty3} // Ensure it updates correctly
                             options={thesisPanels}
-                            disabledIds={selectedPanelIds.filter(
-                              (id) => id !== selectedFaculty3?.id,
-                            )}
+                            disabledIds={[
+                              userThesisModel?.adviser,
+                              userThesisModel?.coAdviser,
+                              ...selectedPanelIds.filter(
+                                (id) => id !== selectedFaculty3?.id,
+                              ),
+                            ]}
                           />
 
                           <SearchableDropdown
@@ -746,9 +759,13 @@ const ThesisSection = () => {
                             value={selectedFaculty4} // Pass the entire object
                             onValueChange={setSelectedFaculty4} // Ensure it updates correctly
                             options={thesisPanels}
-                            disabledIds={selectedPanelIds.filter(
-                              (id) => id !== selectedFaculty4?.id,
-                            )}
+                            disabledIds={[
+                              userThesisModel?.adviser,
+                              userThesisModel?.coAdviser,
+                              ...selectedPanelIds.filter(
+                                (id) => id !== selectedFaculty4?.id,
+                              ),
+                            ]}
                           />
                         </div>
                         <input
@@ -1360,7 +1377,11 @@ const ThesisSection = () => {
                   accept="application/pdf"
                   className="dark:bg-[#1b1b1b]"
                   type="file"
-                  disabled={userThesisModel.forScheduleStatus !== "idle"}
+                  disabled={
+                    !userThesisModel.defended ||
+                    userFinalThesisModel.forScheduleStatus === "pending" ||
+                    userFinalThesisModel.forScheduleStatus === "approve"
+                  }
                 />
               </div>
 
@@ -1396,7 +1417,11 @@ const ThesisSection = () => {
                   accept="application/pdf"
                   className="dark:bg-[#1b1b1b]"
                   type="file"
-                  disabled={userThesisModel.forScheduleStatus !== "idle"}
+                  disabled={
+                    !userThesisModel.defended ||
+                    userFinalThesisModel.forScheduleStatus === "pending" ||
+                    userFinalThesisModel.forScheduleStatus === "approve"
+                  }
                 />
               </div>
             </div>

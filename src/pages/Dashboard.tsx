@@ -393,7 +393,7 @@ const Dashboard = () => {
                 <span className="text-lg">
                   <LuLogs />
                 </span>
-                Logs
+                Approval Status
               </li>
             )}
 
@@ -466,7 +466,7 @@ const Dashboard = () => {
                 <h1 className="ml-3 mt-3">My Advicees</h1>
               )}
               {location.pathname === "/dashboard/logs" && (
-                <h1 className="ml-3 mt-3">Logs</h1>
+                <h1 className="ml-3 mt-3">Panel Approval Status</h1>
               )}
 
               {location.pathname === "/dashboard/proposals" && (
