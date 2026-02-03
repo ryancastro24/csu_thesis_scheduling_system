@@ -266,6 +266,10 @@ const ThesisSection = () => {
   const allPanelsApproved = userPanelApprovals.every(
     (panel: any) => panel?.status === "approve",
   );
+
+  const allPanelsApprovedPending = userPanelApprovals.every(
+    (panel: any) => panel?.status === "pending" || panel?.status === "reject",
+  );
   const adviserApproved = adviserRequest?.status === "approve";
   // co-adviser is OPTIONAL
   const coAdviserApprovedOrNotRequired =
@@ -646,9 +650,12 @@ const ThesisSection = () => {
                 className={`rounded-full p-1 ${
                   adviserApproved &&
                   allPanelsApproved &&
+                  userThesisModel.panelApprovals.length === 4 &&
                   coAdviserApprovedOrNotRequired
                     ? "bg-green-500 text-white"
-                    : adviserApproved || coAdviserRequest?.status === "approve"
+                    : adviserApproved ||
+                        (coAdviserRequest?.status === "approve" &&
+                          allPanelsApprovedPending)
                       ? "bg-primary text-white"
                       : "bg-muted text-muted-foreground"
                 }`}
