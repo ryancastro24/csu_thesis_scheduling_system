@@ -1086,7 +1086,7 @@ const ThesisSection = () => {
         }`}
       >
         <CardHeader>
-          <CardTitle>Capstone Proposal Defense</CardTitle>
+          <CardTitle>Proposal Defense</CardTitle>
           <CardDescription>
             Start your thesis journey by finding a new adviser and panels.
           </CardDescription>
@@ -1363,7 +1363,7 @@ const ThesisSection = () => {
         }`}
       >
         <CardHeader>
-          <CardTitle>Thesis Final Defense</CardTitle>
+          <CardTitle>Final Defense</CardTitle>
           <CardDescription>
             Start your thesis journey by finding new adviser and panels
           </CardDescription>

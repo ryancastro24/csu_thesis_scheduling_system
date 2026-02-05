@@ -332,7 +332,7 @@ export function LoginForm({}: React.ComponentPropsWithoutRef<"div">) {
           >
             <CardHeader>
               <CardTitle className="text-2xl">
-                CCIS Thesis Scheduling System
+                CCIS WEB-BASED THESIS/CAPSTONE SCHEDULING SYSTEM
               </CardTitle>
               <CardDescription className="text-base-300 text-sm">
                 Manage Your Thesis Defense, Advisers, and Panels Efficiently
@@ -576,7 +576,7 @@ export function LoginForm({}: React.ComponentPropsWithoutRef<"div">) {
             </CardContent>
           </Card>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent className="w-[550px]">
+            <DialogContent className="w-[550px] ">
               <fetcher.Form
                 className="flex flex-col gap-5"
                 method="POST"

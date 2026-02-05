@@ -676,6 +676,10 @@ const Dashboard = () => {
                                 {val.thesisId?.schedule?.time}
                               </CardDescription>
 
+                              <CardDescription>
+                                type: {val.thesisId?.type}
+                              </CardDescription>
+
                               <CardDescription className="flex items-center justify-between">
                                 <span>{val.userId?.name}</span>
 
@@ -683,12 +687,16 @@ const Dashboard = () => {
                                   className={`font-bold italic ${
                                     val.status === "approve"
                                       ? "text-green-500"
-                                      : "text-red-500"
+                                      : val.status === "pending"
+                                        ? "text-yellow-500"
+                                        : "text-red-500"
                                   }`}
                                 >
                                   {val.status === "approve"
                                     ? "Approved"
-                                    : "Rejected"}
+                                    : val.status === "pending"
+                                      ? "Pending"
+                                      : "Rejected"}
                                 </span>
 
                                 <Form method="PUT">

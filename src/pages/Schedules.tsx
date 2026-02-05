@@ -911,10 +911,10 @@ const Schedules = () => {
                 {val?.status === "pending" ? (
                   <FaCircleMinus />
                 ) : val?.status === "approved" &&
-                  (val?.defended === "defended" ||
-                    val?.defended === "minor revision" ||
-                    val?.defended === "major revision" ||
-                    val?.defended === "pending") ? (
+                  (val?.thesisFinalStatus === "defended" ||
+                    val?.thesisFinalStatus === "minor revision" ||
+                    val?.thesisFinalStatus === "major revision" ||
+                    val?.thesisFinalStatus === "pending") ? (
                   <FaCircleCheck />
                 ) : (
                   <FaCircleXmark />
@@ -922,26 +922,35 @@ const Schedules = () => {
                 {val?.status === "pending"
                   ? "Pending"
                   : val?.status === "approved" &&
-                      (val?.defended === "defended" ||
-                        val?.defended === "minor revision" ||
-                        val?.defended === "major revision" ||
-                        val?.defended === "pending")
+                      (val?.thesisFinalStatus === "defended" ||
+                        val?.thesisFinalStatus === "minor revision" ||
+                        val?.thesisFinalStatus === "major revision" ||
+                        val?.thesisFinalStatus === "pending")
                     ? "Approved"
                     : "For Reschedule" +
-                      (val?.defended === "re-defense" ? " (Re-defense)" : "")}
+                      (val?.thesisFinalStatus === "redefense"
+                        ? " (Re-defense)"
+                        : "")}
               </p>
 
               {val?.status === "approved" &&
-                (val.defended === "defended" ||
-                  val.defended === "minor revision" ||
-                  val.defended === "major revision") && (
+                (val.thesisFinalStatus === "defended" ||
+                  val.thesisFinalStatus === "minor revision" ||
+                  val.thesisFinalStatus === "major revision") && (
                   <span className="text-sm text-green-500 flex items-center gap-2">
                     {" "}
-                    {val?.defended === "defended"
+                    {val?.thesisFinalStatus === "defended"
                       ? "Defended"
-                      : val?.defended === "minor revision"
+                      : val?.thesisFinalStatus === "minor revision"
                         ? "Minor Revision"
                         : "Major Revision"}
+                  </span>
+                )}
+
+              {val?.status === "approved" &&
+                val.thesisFinalStatus === "pending" && (
+                  <span className="text-sm text-orange-500 flex items-center gap-2">
+                    Waiting for Result
                   </span>
                 )}
             </CardFooter>
