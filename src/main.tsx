@@ -71,7 +71,8 @@ const landingPageLoader = () => {
   const userData = getUserData(); // Debug log to check userData retrieval
   if (
     (isAuthenticated() && userData?.userType === "faculty") ||
-    userData?.userType === "admin"
+    userData?.userType === "admin" ||
+    userData?.userType === "chariperson"
   ) {
     return redirect("/dashboard"); // Redirect to dashboard if already logged in
   }
