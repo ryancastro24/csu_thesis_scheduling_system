@@ -40,8 +40,6 @@ export const action: ActionFunction = async ({ request }) => {
     formData.entries(),
   );
 
-  console.log("submitted data:", data);
-
   // { id, status }
   return await updateThesisDefended(data.id, data.status);
 };

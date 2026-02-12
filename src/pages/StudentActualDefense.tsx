@@ -19,7 +19,7 @@ export async function loader() {
   const chairpersons = await getChairpersons();
   const user = localStorage.getItem("user");
   const userData: any = JSON.parse(user as any);
-  console.log("user data", userData);
+
   const thesisSchedules = await getThesisDocuments(userData.departmentAcronym);
 
   return { students, faculty, chairpersons, thesisSchedules, userData };
@@ -62,7 +62,7 @@ const StudentActualDefense = () => {
   // ---------------- TODAY ----------------
   const todaySchedules = filteredSchedules.filter(
     (val: any) =>
-      new Date(val.schedule.date).toDateString() === today.toDateString()
+      new Date(val.schedule.date).toDateString() === today.toDateString(),
   );
 
   // ---------------- UPCOMING (EXCLUDE TODAY) ----------------
@@ -78,7 +78,7 @@ const StudentActualDefense = () => {
 
   const paginatedUpcoming = upcomingSchedules.slice(
     (page - 1) * ITEMS_PER_PAGE,
-    page * ITEMS_PER_PAGE
+    page * ITEMS_PER_PAGE,
   );
 
   return (

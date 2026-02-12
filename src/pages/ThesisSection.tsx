@@ -6,6 +6,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+
 import { MdEditDocument } from "react-icons/md";
 import { Label } from "@/components/ui/label";
 import { BsPersonFillDash } from "react-icons/bs";
@@ -129,8 +130,6 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   if (data.transaction === "newAdviserApproval") {
-    console.log("newAdviserApproval", data);
-
     const adviserChangeRequest = await changeAdviserRequest(
       data.id,
       data.newAdviser,
@@ -168,7 +167,6 @@ const ThesisSection = () => {
   } = useLoaderData();
   const navigation = useNavigation();
 
-  console.log("userThesisModel", userThesisModel);
   const thesisPanels = [...faculty, ...chairpersons];
   const [proposalTitle, setProposalTitle] = useState<string>("");
   const [adviserThesisFile, setAdviserThesisFile] = useState<File | null>(null);
@@ -279,6 +277,26 @@ const ThesisSection = () => {
     !coAdviserRequest || coAdviserRequest.status === "approve";
 
   const isApproved = adviserApproved && coAdviserApproved;
+
+  const itemsPerPage = 3;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const totalPages = Math.ceil(forms.length / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentForms = forms.slice(startIndex, startIndex + itemsPerPage);
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+    }
+  };
 
   return (
     <div className="grid grid-cols-3 gap-5">
@@ -1044,7 +1062,7 @@ const ThesisSection = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-3 py-4">
-                    {forms.map((form) => (
+                    {currentForms.map((form) => (
                       <div
                         key={form.id}
                         className="flex items-center justify-between rounded-lg border p-3 hover:bg-gray-50"
@@ -1065,7 +1083,32 @@ const ThesisSection = () => {
                   </div>
 
                   <DialogFooter>
-                    <Button type="submit">Download All</Button>
+                    {/* Pagination Controls */}
+                    <div className="flex items-center justify-between mt-4">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={goToPreviousPage}
+                        disabled={currentPage === 1}
+                      >
+                        Previous
+                      </Button>
+
+                      <span className="text-sm font-medium">
+                        Page {currentPage} of {totalPages || 1}
+                      </span>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={goToNextPage}
+                        disabled={
+                          currentPage === totalPages || totalPages === 0
+                        }
+                      >
+                        Next
+                      </Button>
+                    </div>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>

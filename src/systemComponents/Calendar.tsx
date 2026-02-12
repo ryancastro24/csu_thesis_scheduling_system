@@ -74,7 +74,6 @@ export const action: ActionFunction = async ({ request }) => {
   }
 
   if (request.method === "PUT") {
-    console.log("updated data", data);
     const updatedSchedule = await updateUserSchedule(data.id, data);
     return updatedSchedule;
   }
@@ -133,11 +132,12 @@ export default function Calendar() {
   const handleEventClick = (info: any) => {
     setEventToDelete(info.event.id);
     setEventToUpdate(info.event.id);
-    console.log(info);
+
     setSelectedEvent({
       eventType: info.event.title,
       date: info.event.startStr,
     });
+
     setDeleteModal(true);
   };
 
@@ -160,6 +160,7 @@ export default function Calendar() {
       />
 
       {/* Add Event Modal */}
+
       <Dialog open={openModal} onOpenChange={setOpenModal}>
         <DialogContent className="w-[500px]">
           <DialogHeader>
@@ -362,7 +363,11 @@ export default function Calendar() {
             </Button>
 
             <Form method="PUT">
-              <Input name="date" value={selectedEvent.date} type="hidden" />
+              <Input
+                name="date"
+                value={selectedEvent.date?.split("T")[0] || ""}
+                type="hidden"
+              />
               <Input
                 name="eventType"
                 value={selectedEvent.eventType}
@@ -374,16 +379,7 @@ export default function Calendar() {
                 type="hidden"
               />
               <Input name="id" value={eventToUpdate || ""} type="hidden" />
-              <Button
-                disabled={
-                  navigation.state === "submitting" ||
-                  eventType === "" ||
-                  startTime === "" ||
-                  endTime === ""
-                }
-                className="cursor-pointer"
-                type="submit"
-              >
+              <Button className="cursor-pointer" type="submit">
                 {navigation.state === "submitting" ? (
                   <>
                     {" "}
@@ -400,6 +396,7 @@ export default function Calendar() {
       </Dialog>
 
       {/* Delete Event Modal */}
+
       <Dialog open={deleteModal} onOpenChange={setDeleteModal}>
         <DialogContent className="w-[500px]">
           <DialogHeader>

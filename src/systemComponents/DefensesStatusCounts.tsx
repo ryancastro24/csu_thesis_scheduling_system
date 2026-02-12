@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
 import { LabelList, Pie, PieChart } from "recharts";
@@ -23,14 +21,18 @@ import {
 
 /* ---------------------------------- TYPES --------------------------------- */
 
-type DefenseStatus =
+type DefenseThesisFinalStatus =
   | "defended"
   | "minor revision"
   | "major revision"
-  | "re-defense";
+  | "redefense";
+
+type Thesis = {
+  thesisFinalStatus?: DefenseThesisFinalStatus;
+};
 
 type ChartItem = {
-  status: DefenseStatus;
+  thesisFinalStatus: DefenseThesisFinalStatus;
   count: number;
   fill: string;
 };
@@ -50,7 +52,7 @@ const chartConfig = {
     label: "Major Revision",
     color: "var(--chart-3)",
   },
-  "re-defense": {
+  redefense: {
     label: "Re-defense",
     color: "var(--chart-4)",
   },
@@ -58,44 +60,42 @@ const chartConfig = {
 
 /* -------------------------------- COMPONENT -------------------------------- */
 
-export default function DefensesStatusCounts() {
+export default function DefenseThesisFinalStatusCounts() {
   const [chartData, setChartData] = useState<ChartItem[]>([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState<number>(0);
 
   useEffect(() => {
     async function fetchAndCount() {
       try {
-        const theses = await getAllThesisData();
+        const theses: Thesis[] = await getAllThesisData();
 
-        const counts: Record<DefenseStatus, number> = {
+        const counts: Record<DefenseThesisFinalStatus, number> = {
           defended: 0,
           "minor revision": 0,
           "major revision": 0,
-          "re-defense": 0,
+          redefense: 0,
         };
 
-        theses.forEach((thesis: any) => {
-          const status = thesis.defenseStatus as DefenseStatus | undefined;
+        theses.forEach((thesis) => {
+          const status = thesis.thesisFinalStatus; // ✅ FIXED HERE
 
-          if (status && status in counts) {
+          if (status && counts[status] !== undefined) {
             counts[status]++;
           }
         });
 
         const data: ChartItem[] = (
-          Object.entries(counts) as [DefenseStatus, number][]
-        )
-          .filter(([, count]) => count > 0)
-          .map(([status, count]) => ({
-            status,
-            count,
-            fill: chartConfig[status].color,
-          }));
+          Object.entries(counts) as [DefenseThesisFinalStatus, number][]
+        ).map(([thesisFinalStatus, count]) => ({
+          thesisFinalStatus,
+          count,
+          fill: chartConfig[thesisFinalStatus].color,
+        }));
 
         setChartData(data);
-        setTotal(data.reduce((sum, item) => sum + item.count, 0));
+        setTotal(theses.length);
       } catch (error) {
-        console.error("Failed to fetch defense status data", error);
+        console.error("Failed to fetch thesis final status data", error);
       }
     }
 
@@ -105,12 +105,12 @@ export default function DefensesStatusCounts() {
   return (
     <Card className="flex flex-col">
       <CardHeader className="items-center pb-0">
-        <CardTitle>Defense Status</CardTitle>
+        <CardTitle>Defense Final Status</CardTitle>
         <CardDescription>Thesis defense outcomes</CardDescription>
       </CardHeader>
 
       <CardContent className="flex-1 pb-0">
-        {chartData.length > 0 ? (
+        {total > 0 ? (
           <ChartContainer
             config={chartConfig}
             className="[&_.recharts-text]:fill-background mx-auto aspect-square max-h-[250px]"
@@ -119,12 +119,14 @@ export default function DefensesStatusCounts() {
               <ChartTooltip
                 content={<ChartTooltipContent nameKey="count" hideLabel />}
               />
-              <Pie data={chartData} dataKey="count" nameKey="status">
+              <Pie data={chartData} dataKey="count" nameKey="thesisFinalStatus">
                 <LabelList
-                  dataKey="status"
+                  dataKey="thesisFinalStatus"
                   stroke="none"
                   fontSize={12}
-                  formatter={(value: DefenseStatus) => chartConfig[value].label}
+                  formatter={(value: DefenseThesisFinalStatus) =>
+                    chartConfig[value].label
+                  }
                 />
               </Pie>
             </PieChart>
@@ -142,7 +144,7 @@ export default function DefensesStatusCounts() {
           <TrendingUp className="h-4 w-4" />
         </div>
         <div className="text-muted-foreground">
-          Distribution by defense status
+          Distribution by thesis final status
         </div>
       </CardFooter>
     </Card>

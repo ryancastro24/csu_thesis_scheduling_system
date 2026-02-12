@@ -33,7 +33,7 @@ export const loader = async () => {
 export const action: ActionFunction = async ({ request }) => {
   const formData = await request.formData();
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
-    formData.entries()
+    formData.entries(),
   );
 
   const updatedProfile = await updateUserProfile(data.userId, formData);
@@ -81,7 +81,6 @@ const ManageProfile = () => {
     }
   }, [actionData]);
 
-  console.log("user profile", userData.profilePicture);
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setProfile((prev) => ({ ...prev, [name]: value }));

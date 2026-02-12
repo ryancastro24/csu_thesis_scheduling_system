@@ -29,11 +29,6 @@ const PDFViewer = () => {
   const { thesisFile, title, student1, student2, student3 } =
     location.state || {};
 
-  console.log("student1:", student1);
-  console.log("student2:", student2);
-  console.log("student3:", student3);
-  console.log("PDF thesisFile URL:", thesisFile);
-
   return (
     <div className="h-[750px] overflow-auto bg-background p-4 rounded shadow">
       <div className="flex items-center justify-between mb-2">

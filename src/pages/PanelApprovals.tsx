@@ -45,10 +45,8 @@ export const action: ActionFunction = async ({ request }) => {
   const data: Record<string, FormDataEntryValue> = Object.fromEntries(
     formData.entries(),
   );
-  console.log("submitted data:", data);
   const panelApprovalData = await panelApproval(data.id, data);
 
-  console.log(panelApprovalData);
   return panelApprovalData;
 };
 

@@ -190,19 +190,23 @@ const Dashboard = () => {
         <Separator />
         <div>
           <ul className="w-full px-2 flex flex-col gap-3">
-            <li
-              onClick={() => navigate("/")}
-              className={`hover:bg-orange-500 ${
-                location.pathname === "/dashboard"
-                  ? "bg-orange-500 text-white"
-                  : ""
-              } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
-            >
-              <span className="text-lg">
-                <BiSolidDashboard />
-              </span>
-              Dashboard
-            </li>
+            {["admin", "chairperson", "faculty"].includes(
+              userData.userType,
+            ) && (
+              <li
+                onClick={() => navigate("/")}
+                className={`hover:bg-orange-500 ${
+                  location.pathname === "/dashboard"
+                    ? "bg-orange-500 text-white"
+                    : ""
+                } hover:text-white flex items-center gap-2 rounded cursor-pointer text-sm px-3 py-2 `}
+              >
+                <span className="text-lg">
+                  <BiSolidDashboard />
+                </span>
+                Dashboard
+              </li>
+            )}
 
             {userData.userType === "student" && (
               <li

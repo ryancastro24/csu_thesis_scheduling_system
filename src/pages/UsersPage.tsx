@@ -194,7 +194,6 @@ export default function UsersPage() {
 
     const msg = fetcher.data.message;
 
-    console.log("fetcher data message", msg);
     if (msg.includes("User deleted successfully")) {
       toast.success(msg);
       setDeleteModal(false);

@@ -38,7 +38,6 @@ import {
 import { Label } from "@/components/ui/label";
 
 import { FaEye } from "react-icons/fa";
-import { FaTrash } from "react-icons/fa";
 import { FaXmark } from "react-icons/fa6";
 import { FaFileCircleCheck } from "react-icons/fa6";
 import { FaCircleMinus, FaCircleCheck, FaCircleXmark } from "react-icons/fa6";
@@ -69,8 +68,6 @@ export const action: ActionFunction = async ({ request }) => {
     formData.entries(),
   );
 
-  console.log(data);
-
   if (data?.submit === "submitSchedule") {
     // Create a new FormData object to include the actual file
     const thesisScheduleData = new FormData();
@@ -79,14 +76,13 @@ export const action: ActionFunction = async ({ request }) => {
     }
 
     const thesisSchedule = await createThesisSchedule(thesisScheduleData);
-    console.log(data);
+
     return thesisSchedule;
   }
 
   if (data?.submit === "reschedule") {
     const rescheduleThesisData = await rescheduleThesis(data.id, data);
 
-    console.log("reschedule data for testing", rescheduleThesisData);
     return rescheduleThesisData;
   }
 
@@ -114,7 +110,7 @@ export async function loader() {
   const chairpersons = await getChairpersons();
   const user = localStorage.getItem("user");
   const userData: any = JSON.parse(user as any);
-  console.log("user data", userData);
+
   const thesisSchedules = await getThesisDocuments(userData.departmentAcronym);
 
   return { students, faculty, chairpersons, thesisSchedules, userData };
@@ -125,8 +121,6 @@ type ScheduleTab = "for-approval" | "reschedule" | "archives";
 const ITEMS_PER_PAGE = 6;
 const Schedules = () => {
   const { thesisSchedules, userData } = useLoaderData();
-
-  console.log("thesis schedules", thesisSchedules);
 
   const [activeTab, setActiveTab] = useState<ScheduleTab>("for-approval");
   const [generateDateRescheduleLoading, setGenerateDateRescheduleLoading] =
@@ -227,8 +221,6 @@ const Schedules = () => {
       chairperson: userData.id,
       adminId: "67d29ce1990acc26a58cb53a",
     };
-
-    console.log(data);
 
     try {
       const response = await axios.post(
@@ -522,50 +514,7 @@ const Schedules = () => {
                         Close
                       </Button>
                     </DialogClose>
-                    <Button className="cursor-pointer">
-                      Download Manuscript
-                    </Button>
                   </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button
-                    onClick={() => setOpenThesisModal(true)}
-                    className="cursor-pointer "
-                    size={"icon"}
-                    variant={"outline"}
-                  >
-                    <FaTrash />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="w-[500px]">
-                  <DialogHeader>
-                    <DialogTitle>Delete Thesis</DialogTitle>
-                    <DialogDescription>
-                      Are you sure you want to delete this thesis?
-                    </DialogDescription>
-                  </DialogHeader>
-                  <Form
-                    method="post"
-                    action={`/dashboard/schedules/${val?._id}/destroy`}
-                  >
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button" variant="secondary">
-                          Close
-                        </Button>
-                      </DialogClose>
-                      <Button
-                        className="cursor-pointer"
-                        variant={"destructive"}
-                        type="submit"
-                      >
-                        Delete
-                      </Button>
-                    </DialogFooter>
-                  </Form>
                 </DialogContent>
               </Dialog>
 

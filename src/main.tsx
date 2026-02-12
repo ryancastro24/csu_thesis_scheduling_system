@@ -37,7 +37,7 @@ import { action as DestroySchedule } from "./destroy/destroySchedule";
 import { Toaster } from "@/components/ui/sonner";
 import UsersErrorPage from "./ErrorResponses/UsersErrorPage";
 import LandingPage from "./pages/LandingPage";
-import { isAuthenticated } from "./utils/auth";
+import { isAuthenticated, getUserData } from "./utils/auth";
 import { redirect } from "react-router-dom";
 import Favorites, {
   loader as FavoritesLoader,
@@ -66,13 +66,23 @@ import AdviseeComponent, {
 import StudentActualDefense, {
   loader as StudentActualDefenseLoader,
 } from "./pages/StudentActualDefense";
+
 const landingPageLoader = () => {
-  if (isAuthenticated()) {
+  const userData = getUserData(); // Debug log to check userData retrieval
+  if (
+    (isAuthenticated() && userData?.userType === "faculty") ||
+    userData?.userType === "admin"
+  ) {
     return redirect("/dashboard"); // Redirect to dashboard if already logged in
+  }
+
+  if (isAuthenticated() && userData?.userType === "student") {
+    return redirect("/dashboard/thesisSection"); // Redirect to dashboard if already logged in
   }
   return null; // Proceed if not authenticated
 };
 import ErrorCatcher from "./ErrorResponses/ErrorCatcher";
+
 const router = createBrowserRouter([
   {
     path: "/",
