@@ -72,7 +72,7 @@ const landingPageLoader = () => {
   if (
     (isAuthenticated() && userData?.userType === "faculty") ||
     userData?.userType === "admin" ||
-    userData?.userType === "chariperson"
+    userData?.userType === "chairperson"
   ) {
     return redirect("/dashboard"); // Redirect to dashboard if already logged in
   }
